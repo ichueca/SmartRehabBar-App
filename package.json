@@ -1,0 +1,20 @@
+﻿{
+  "name": "smartrehabbar",
+  "version": "1.0.0",
+  "description": "Sistema de rehabilitación con plataformas de medición de peso",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "heroku-postbuild": "npm install --prefix backend && npm install --prefix frontend && npm run build && cd backend && npx prisma generate && npx prisma migrate deploy"
+  },
+  "keywords": ["rehabilitation", "health", "sensors"],
+  "author": "SmartRehabBar Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
