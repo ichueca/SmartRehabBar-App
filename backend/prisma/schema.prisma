@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Patient {
+  id        Int       @id @default(autoincrement())
+  name      String
+  createdAt DateTime  @default(now()) @map("created_at")
+  sessions  Session[]
+
+  @@map("patients")
+}
+
+model Session {
+  id           Int           @id @default(autoincrement())
+  patientId    Int           @map("patient_id")
+  startTime    DateTime      @map("start_time")
+  endTime      DateTime?     @map("end_time")
+  notes        String?
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  measurements Measurement[]
+
+  @@map("sessions")
+}
+
+model Measurement {
+  id                  Int      @id @default(autoincrement())
+  sessionId           Int      @map("session_id")
+  foot                String
+  weight              Float
+  duration            Int?
+  timestamp           DateTime
+  pairedMeasurementId Int?     @map("paired_measurement_id")
+  session             Session  @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+  @@index([timestamp])
+  @@map("measurements")
+}
