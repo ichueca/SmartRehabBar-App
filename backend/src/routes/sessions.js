@@ -1,6 +1,8 @@
 ﻿import express from 'express'
 import { PrismaClient } from '@prisma/client'
 import { validateSession } from '../middleware/validation.js'
+import sessionService from '../services/sessionService.js'
+import measurementService from '../services/measurementService.js'
 
 const router = express.Router()
 const prisma = new PrismaClient()
@@ -19,6 +21,16 @@ router.post('/', validateSession, async (req, res, next) => {
       return res.status(404).json({
         error: 'Not found',
         message: 'Paciente no encontrado'
+      })
+    }
+    
+    // Verificar que no hay sesión activa
+    const activeSession = await sessionService.getActiveSession(patientId)
+    if (activeSession) {
+      return res.status(400).json({
+        error: 'Bad request',
+        message: 'El paciente ya tiene una sesión activa',
+        activeSessionId: activeSession.id
       })
     }
     
@@ -63,6 +75,10 @@ router.patch('/:id', async (req, res, next) => {
       })
     }
     
+    // Calcular estadísticas antes de finalizar
+    const stats = await sessionService.calculateSessionStats(parseInt(id))
+    
+    // Finalizar sesión
     const updatedSession = await prisma.session.update({
       where: { id: parseInt(id) },
       data: {
@@ -70,14 +86,17 @@ router.patch('/:id', async (req, res, next) => {
         notes: notes || null
       },
       include: {
-        patient: true,
-        _count: {
-          select: { measurements: true }
-        }
+        patient: true
       }
     })
     
-    res.json(updatedSession)
+    // Limpiar buffer de mediciones
+    measurementService.clearSessionBuffer(parseInt(id))
+    
+    res.json({
+      ...updatedSession,
+      statistics: stats
+    })
   } catch (error) {
     next(error)
   }
@@ -105,7 +124,13 @@ router.get('/:id', async (req, res, next) => {
       })
     }
     
-    res.json(session)
+    // Calcular estadísticas
+    const stats = await sessionService.calculateSessionStats(parseInt(id))
+    
+    res.json({
+      ...session,
+      statistics: stats
+    })
   } catch (error) {
     next(error)
   }

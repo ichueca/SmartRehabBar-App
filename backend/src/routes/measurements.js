@@ -1,6 +1,7 @@
 ﻿import express from 'express'
 import { PrismaClient } from '@prisma/client'
 import { validateMeasurement } from '../middleware/validation.js'
+import measurementService from '../services/measurementService.js'
 
 const router = express.Router()
 const prisma = new PrismaClient()
@@ -10,17 +11,35 @@ router.post('/left', validateMeasurement, async (req, res, next) => {
   try {
     const { sessionId, weight, duration, timestamp } = req.body
     
-    const measurement = await prisma.measurement.create({
-      data: {
-        sessionId,
-        foot: 'left',
-        weight,
-        duration: duration || null,
-        timestamp: new Date(timestamp)
-      }
+    // Verificar que la sesión existe y está activa
+    const session = await prisma.session.findUnique({
+      where: { id: sessionId }
     })
     
-    res.status(201).json(measurement)
+    if (!session) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'Sesión no encontrada'
+      })
+    }
+    
+    if (session.endTime) {
+      return res.status(400).json({
+        error: 'Bad request',
+        message: 'La sesión ya está finalizada'
+      })
+    }
+    
+    // Procesar medición con el servicio
+    const result = await measurementService.processMeasurement(
+      sessionId,
+      'left',
+      weight,
+      duration,
+      timestamp
+    )
+    
+    res.status(201).json(result)
   } catch (error) {
     next(error)
   }
@@ -31,17 +50,35 @@ router.post('/right', validateMeasurement, async (req, res, next) => {
   try {
     const { sessionId, weight, duration, timestamp } = req.body
     
-    const measurement = await prisma.measurement.create({
-      data: {
-        sessionId,
-        foot: 'right',
-        weight,
-        duration: duration || null,
-        timestamp: new Date(timestamp)
-      }
+    // Verificar que la sesión existe y está activa
+    const session = await prisma.session.findUnique({
+      where: { id: sessionId }
     })
     
-    res.status(201).json(measurement)
+    if (!session) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'Sesión no encontrada'
+      })
+    }
+    
+    if (session.endTime) {
+      return res.status(400).json({
+        error: 'Bad request',
+        message: 'La sesión ya está finalizada'
+      })
+    }
+    
+    // Procesar medición con el servicio
+    const result = await measurementService.processMeasurement(
+      sessionId,
+      'right',
+      weight,
+      duration,
+      timestamp
+    )
+    
+    res.status(201).json(result)
   } catch (error) {
     next(error)
   }
