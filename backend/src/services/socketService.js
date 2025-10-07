@@ -7,20 +7,20 @@ class SocketService {
   initialize(httpServer) {
     this.io = new Server(httpServer, {
       cors: {
-        origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+        origin: '*', // Permitir todos los orígenes en desarrollo
         methods: ['GET', 'POST']
       }
     })
     
     this.io.on('connection', (socket) => {
-      console.log(`✅ Cliente conectado: ${socket.id}`)
+      console.log(` Cliente conectado: ${socket.id}`)
       
       socket.on('disconnect', () => {
-        console.log(`❌ Cliente desconectado: ${socket.id}`)
+        console.log(` Cliente desconectado: ${socket.id}`)
       })
     })
     
-    console.log('🔌 Socket.IO inicializado')
+    console.log(' Socket.IO inicializado')
   }
   
   // Emitir evento de nueva medición
