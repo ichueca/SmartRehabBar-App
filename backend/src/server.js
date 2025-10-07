@@ -1,16 +1,22 @@
 ﻿import express from 'express'
+import { createServer } from 'http'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import patientsRouter from './routes/patients.js'
 import sessionsRouter from './routes/sessions.js'
 import measurementsRouter from './routes/measurements.js'
 import { errorHandler, notFound } from './middleware/errorHandler.js'
+import socketService from './services/socketService.js'
 
 // Cargar variables de entorno
 dotenv.config()
 
 const app = express()
+const httpServer = createServer(app)
 const PORT = process.env.PORT || 5000
+
+// Inicializar Socket.IO
+socketService.initialize(httpServer)
 
 // Middleware global
 app.use(cors({
@@ -54,8 +60,9 @@ app.use(notFound)
 app.use(errorHandler)
 
 // Iniciar servidor
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(` Servidor corriendo en http://localhost:${PORT}`)
   console.log(` Entorno: ${process.env.NODE_ENV || 'development'}`)
   console.log(` API disponible en http://localhost:${PORT}/api`)
+  console.log(` Socket.IO listo para conexiones`)
 })

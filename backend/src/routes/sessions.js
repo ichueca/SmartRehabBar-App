@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client'
 import { validateSession } from '../middleware/validation.js'
 import sessionService from '../services/sessionService.js'
 import measurementService from '../services/measurementService.js'
+import socketService from '../services/socketService.js'
 
 const router = express.Router()
 const prisma = new PrismaClient()
@@ -12,7 +13,6 @@ router.post('/', validateSession, async (req, res, next) => {
   try {
     const { patientId } = req.body
     
-    // Verificar que el paciente existe
     const patient = await prisma.patient.findUnique({
       where: { id: patientId }
     })
@@ -24,7 +24,6 @@ router.post('/', validateSession, async (req, res, next) => {
       })
     }
     
-    // Verificar que no hay sesión activa
     const activeSession = await sessionService.getActiveSession(patientId)
     if (activeSession) {
       return res.status(400).json({
@@ -34,7 +33,6 @@ router.post('/', validateSession, async (req, res, next) => {
       })
     }
     
-    // Crear la sesión
     const session = await prisma.session.create({
       data: {
         patientId,
@@ -44,6 +42,9 @@ router.post('/', validateSession, async (req, res, next) => {
         patient: true
       }
     })
+    
+    // Emitir evento Socket.IO
+    socketService.emitSessionStarted(session)
     
     res.status(201).json(session)
   } catch (error) {
@@ -75,10 +76,8 @@ router.patch('/:id', async (req, res, next) => {
       })
     }
     
-    // Calcular estadísticas antes de finalizar
     const stats = await sessionService.calculateSessionStats(parseInt(id))
     
-    // Finalizar sesión
     const updatedSession = await prisma.session.update({
       where: { id: parseInt(id) },
       data: {
@@ -90,13 +89,17 @@ router.patch('/:id', async (req, res, next) => {
       }
     })
     
-    // Limpiar buffer de mediciones
     measurementService.clearSessionBuffer(parseInt(id))
     
-    res.json({
+    const result = {
       ...updatedSession,
       statistics: stats
-    })
+    }
+    
+    // Emitir evento Socket.IO
+    socketService.emitSessionEnded(result)
+    
+    res.json(result)
   } catch (error) {
     next(error)
   }
@@ -124,7 +127,6 @@ router.get('/:id', async (req, res, next) => {
       })
     }
     
-    // Calcular estadísticas
     const stats = await sessionService.calculateSessionStats(parseInt(id))
     
     res.json({
