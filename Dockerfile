@@ -3,8 +3,8 @@
 
 FROM node:18-alpine
 
-# Instalar dependencias del sistema (SQLite ya viene incluido en Alpine)
-RUN apk add --no-cache sqlite
+# Instalar dependencias del sistema (SQLite y OpenSSL para Prisma)
+RUN apk add --no-cache sqlite openssl
 
 # Crear directorio de trabajo
 WORKDIR /app
