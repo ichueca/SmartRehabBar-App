@@ -1,6 +1,4 @@
 build:
   docker:
     web: Dockerfile
-run:
-  web: npx prisma migrate deploy && node src/server.js
 
