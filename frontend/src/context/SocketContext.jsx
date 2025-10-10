@@ -19,7 +19,9 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     // Conectar a Socket.IO
-    const socketInstance = io('http://localhost:5000', {
+    // En producción, conectar al mismo servidor. En desarrollo, a localhost:5000
+    const socketUrl = import.meta.env.PROD ? window.location.origin : 'http://localhost:5000'
+    const socketInstance = io(socketUrl, {
       transports: ['websocket', 'polling']
     })
 
