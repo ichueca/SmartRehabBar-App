@@ -37,9 +37,19 @@ if (process.env.NODE_ENV === 'development') {
   })
 }
 
-// Rutas principales
-app.get('/', (req, res) => {
-  res.json({ 
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
+// Rutas de la API
+app.use('/api/patients', patientsRouter)
+app.use('/api/sessions', sessionsRouter)
+app.use('/api/measurements', measurementsRouter)
+
+// API info endpoint
+app.get('/api', (req, res) => {
+  res.json({
     message: 'SmartRehabBar API',
     version: '1.0.0',
     status: 'running',
@@ -51,20 +61,12 @@ app.get('/', (req, res) => {
   })
 })
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
-})
-
-// Rutas de la API
-app.use('/api/patients', patientsRouter)
-app.use('/api/sessions', sessionsRouter)
-app.use('/api/measurements', measurementsRouter)
-
 // Servir frontend en producción
 if (process.env.NODE_ENV === 'production') {
   const publicPath = join(__dirname, '..', 'public')
   app.use(express.static(publicPath))
 
+  // Todas las rutas no-API sirven el frontend
   app.get('*', (req, res) => {
     res.sendFile(join(publicPath, 'index.html'))
   })
