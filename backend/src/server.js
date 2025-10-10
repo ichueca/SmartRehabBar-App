@@ -1,5 +1,7 @@
 ﻿import express from 'express'
 import { createServer } from 'http'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import patientsRouter from './routes/patients.js'
@@ -7,6 +9,9 @@ import sessionsRouter from './routes/sessions.js'
 import measurementsRouter from './routes/measurements.js'
 import { errorHandler, notFound } from './middleware/errorHandler.js'
 import socketService from './services/socketService.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 // Cargar variables de entorno
 dotenv.config()
@@ -55,9 +60,19 @@ app.use('/api/patients', patientsRouter)
 app.use('/api/sessions', sessionsRouter)
 app.use('/api/measurements', measurementsRouter)
 
-// Middleware de manejo de errores (debe ir al final)
-app.use(notFound)
-app.use(errorHandler)
+// Servir frontend en producción
+if (process.env.NODE_ENV === 'production') {
+  const publicPath = join(__dirname, '..', 'public')
+  app.use(express.static(publicPath))
+
+  app.get('*', (req, res) => {
+    res.sendFile(join(publicPath, 'index.html'))
+  })
+} else {
+  // Middleware de manejo de errores (solo en desarrollo)
+  app.use(notFound)
+  app.use(errorHandler)
+}
 
 // Iniciar servidor
 httpServer.listen(PORT, () => {

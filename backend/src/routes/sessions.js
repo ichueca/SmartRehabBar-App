@@ -1,4 +1,4 @@
-﻿import express from 'express'
+import express from 'express'
 import { PrismaClient } from '@prisma/client'
 import { validateSession } from '../middleware/validation.js'
 import sessionService from '../services/sessionService.js'
@@ -8,7 +8,38 @@ import socketService from '../services/socketService.js'
 const router = express.Router()
 const prisma = new PrismaClient()
 
-// POST /api/sessions - Iniciar una nueva sesión
+// GET /api/sessions - Listar todas las sesiones
+router.get('/', async (req, res, next) => {
+  try {
+    const sessions = await prisma.session.findMany({
+      include: {
+        patient: true,
+        _count: {
+          select: { measurements: true }
+        }
+      },
+      orderBy: {
+        startTime: 'desc'
+      }
+    })
+
+    // Añadir estadísticas de balance a cada sesión finalizada
+    const sessionsWithStats = await Promise.all(
+      sessions.map(async (session) => {
+        if (session.endTime) {
+          const stats = await sessionService.calculateSessionStats(session.id)
+          return { ...session, statistics: stats }
+        }
+        return session
+      })
+    )
+
+    res.json(sessionsWithStats)
+  } catch (error) {
+    next(error)
+  }
+})
+// POST /api/sessions - Iniciar una nueva sesi�n
 router.post('/', validateSession, async (req, res, next) => {
   try {
     const { patientId } = req.body
@@ -28,7 +59,7 @@ router.post('/', validateSession, async (req, res, next) => {
     if (activeSession) {
       return res.status(400).json({
         error: 'Bad request',
-        message: 'El paciente ya tiene una sesión activa',
+        message: 'El paciente ya tiene una sesi�n activa',
         activeSessionId: activeSession.id
       })
     }
@@ -52,7 +83,7 @@ router.post('/', validateSession, async (req, res, next) => {
   }
 })
 
-// PATCH /api/sessions/:id - Finalizar una sesión
+// PATCH /api/sessions/:id - Finalizar una sesi�n
 router.patch('/:id', async (req, res, next) => {
   try {
     const { id } = req.params
@@ -65,14 +96,14 @@ router.patch('/:id', async (req, res, next) => {
     if (!session) {
       return res.status(404).json({
         error: 'Not found',
-        message: 'Sesión no encontrada'
+        message: 'Sesi�n no encontrada'
       })
     }
     
     if (session.endTime) {
       return res.status(400).json({
         error: 'Bad request',
-        message: 'La sesión ya está finalizada'
+        message: 'La sesi�n ya est� finalizada'
       })
     }
     
@@ -105,7 +136,7 @@ router.patch('/:id', async (req, res, next) => {
   }
 })
 
-// GET /api/sessions/:id - Obtener una sesión
+// GET /api/sessions/:id - Obtener una sesi�n
 router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params
@@ -123,7 +154,7 @@ router.get('/:id', async (req, res, next) => {
     if (!session) {
       return res.status(404).json({
         error: 'Not found',
-        message: 'Sesión no encontrada'
+        message: 'Sesi�n no encontrada'
       })
     }
     
@@ -139,3 +170,4 @@ router.get('/:id', async (req, res, next) => {
 })
 
 export default router
+

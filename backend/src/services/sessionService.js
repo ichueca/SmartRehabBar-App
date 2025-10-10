@@ -23,7 +23,7 @@ class SessionService {
       where: { sessionId },
       orderBy: { timestamp: 'asc' }
     })
-    
+
     if (measurements.length === 0) {
       return {
         totalMeasurements: 0,
@@ -32,18 +32,20 @@ class SessionService {
         averageBalance: null
       }
     }
-    
+
     // Contar mediciones emparejadas
     const paired = measurements.filter(m => m.pairedMeasurementId !== null)
     const pairedSteps = paired.length / 2
     const unpaired = measurements.length - paired.length
-    
+
     // Calcular balance promedio (solo de mediciones emparejadas)
     let totalDifference = 0
+    let totalLeftWeight = 0
+    let totalRightWeight = 0
     let balanceCount = 0
-    
+
     const processedPairs = new Set()
-    
+
     for (const measurement of measurements) {
       if (measurement.pairedMeasurementId && !processedPairs.has(measurement.id)) {
         const pair = measurements.find(m => m.id === measurement.pairedMeasurementId)
@@ -54,26 +56,44 @@ class SessionService {
           const leftPercentage = (leftWeight / total) * 100
           const rightPercentage = (rightWeight / total) * 100
           const difference = Math.abs(leftPercentage - rightPercentage)
-          
+
           totalDifference += difference
+          totalLeftWeight += leftWeight
+          totalRightWeight += rightWeight
           balanceCount++
-          
+
           processedPairs.add(measurement.id)
           processedPairs.add(pair.id)
         }
       }
     }
-    
-    const averageBalance = balanceCount > 0 
-      ? parseFloat((totalDifference / balanceCount).toFixed(2))
-      : null
-    
+
+    let averageBalance = null
+    if (balanceCount > 0) {
+      const avgLeftWeight = totalLeftWeight / balanceCount
+      const avgRightWeight = totalRightWeight / balanceCount
+      const totalWeight = avgLeftWeight + avgRightWeight
+      const leftPercentage = parseFloat(((avgLeftWeight / totalWeight) * 100).toFixed(1))
+      const rightPercentage = parseFloat(((avgRightWeight / totalWeight) * 100).toFixed(1))
+      // Usar el promedio de las diferencias individuales, no la diferencia de los promedios
+      const avgDifference = parseFloat((totalDifference / balanceCount).toFixed(2))
+
+      averageBalance = {
+        leftWeight: parseFloat(avgLeftWeight.toFixed(2)),
+        rightWeight: parseFloat(avgRightWeight.toFixed(2)),
+        leftPercentage,
+        rightPercentage,
+        difference: avgDifference,
+        status: this.getBalanceStatus(avgDifference)
+      }
+    }
+
     return {
       totalMeasurements: measurements.length,
+      totalSteps: pairedSteps,  // Alias para compatibilidad con frontend
       pairedSteps,
       unpairedMeasurements: unpaired,
-      averageBalance,
-      balanceStatus: this.getBalanceStatus(averageBalance)
+      averageBalance
     }
   }
   

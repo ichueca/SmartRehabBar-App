@@ -1,10 +1,13 @@
-generator client {
-  provider = "prisma-client-js"
-}
+// Prisma Schema para SmartRehabBar
+// Usa SQLite para simplicidad (Heroku y Raspberry Pi)
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
 }
 
 model Patient {
@@ -29,16 +32,19 @@ model Session {
 }
 
 model Measurement {
-  id                  Int      @id @default(autoincrement())
-  sessionId           Int      @map("session_id")
-  foot                String
-  weight              Float
-  duration            Int?
-  timestamp           DateTime
-  pairedMeasurementId Int?     @map("paired_measurement_id")
-  session             Session  @relation(fields: [sessionId], references: [id])
+  id                   Int          @id @default(autoincrement())
+  sessionId            Int          @map("session_id")
+  foot                 String       // "left" or "right"
+  weight               Float
+  duration             Int?         // milliseconds
+  timestamp            DateTime
+  pairedMeasurementId  Int?         @unique @map("paired_measurement_id")
+  session              Session      @relation(fields: [sessionId], references: [id])
+  pairedMeasurement    Measurement? @relation("MeasurementPair", fields: [pairedMeasurementId], references: [id])
+  pairOf               Measurement? @relation("MeasurementPair")
 
   @@index([sessionId])
   @@index([timestamp])
   @@map("measurements")
 }
+
