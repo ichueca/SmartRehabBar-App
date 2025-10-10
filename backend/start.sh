@@ -2,12 +2,12 @@
 
 echo "🚀 Iniciando SmartRehabBar..."
 
-# Ejecutar migraciones
-echo "📦 Ejecutando migraciones de base de datos..."
-npx prisma migrate deploy
+# Crear esquema de base de datos
+echo "📦 Creando esquema de base de datos..."
+npx prisma db push --accept-data-loss
 
 if [ $? -ne 0 ]; then
-  echo "❌ Error al ejecutar migraciones"
+  echo "❌ Error al crear esquema"
   exit 1
 fi
 
