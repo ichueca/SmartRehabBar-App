@@ -3,13 +3,15 @@
 ## Base URL
 
 **Desarrollo Local:**
+
 ```
 http://localhost:3000
 ```
 
 **Heroku (Producción):**
+
 ```
-https://smartrehabbar.herokuapp.com
+https://smartrehabbar-demo-7f620514b4ed.herokuapp.com/ 
 ```
 
 ---
@@ -19,11 +21,13 @@ https://smartrehabbar.herokuapp.com
 ### 1. Pacientes
 
 #### 1.1 Listar Pacientes
+
 ```http
 GET /api/patients
 ```
 
 **Respuesta exitosa (200):**
+
 ```json
 {
   "success": true,
@@ -43,12 +47,14 @@ GET /api/patients
 ```
 
 #### 1.2 Crear Paciente
+
 ```http
 POST /api/patients
 Content-Type: application/json
 ```
 
 **Body:**
+
 ```json
 {
   "name": "Juan Pérez"
@@ -56,6 +62,7 @@ Content-Type: application/json
 ```
 
 **Respuesta exitosa (201):**
+
 ```json
 {
   "success": true,
@@ -68,15 +75,18 @@ Content-Type: application/json
 ```
 
 **Errores:**
+
 - `400`: Nombre vacío o inválido
 - `500`: Error del servidor
 
 #### 1.3 Obtener Paciente
+
 ```http
 GET /api/patients/:id
 ```
 
 **Respuesta exitosa (200):**
+
 ```json
 {
   "success": true,
@@ -96,6 +106,7 @@ GET /api/patients/:id
 ```
 
 **Errores:**
+
 - `404`: Paciente no encontrado
 
 ---
@@ -103,12 +114,14 @@ GET /api/patients/:id
 ### 2. Sesiones
 
 #### 2.1 Crear Sesión (Iniciar)
+
 ```http
 POST /api/sessions
 Content-Type: application/json
 ```
 
 **Body:**
+
 ```json
 {
   "patientId": 1
@@ -116,6 +129,7 @@ Content-Type: application/json
 ```
 
 **Respuesta exitosa (201):**
+
 ```json
 {
   "success": true,
@@ -130,17 +144,20 @@ Content-Type: application/json
 ```
 
 **Errores:**
+
 - `400`: patientId inválido o faltante
 - `404`: Paciente no encontrado
 - `409`: Ya existe una sesión activa para este paciente
 
 #### 2.2 Finalizar Sesión
+
 ```http
 PATCH /api/sessions/:id
 Content-Type: application/json
 ```
 
 **Body (opcional):**
+
 ```json
 {
   "notes": "Sesión completada exitosamente"
@@ -148,6 +165,7 @@ Content-Type: application/json
 ```
 
 **Respuesta exitosa (200):**
+
 ```json
 {
   "success": true,
@@ -171,15 +189,18 @@ Content-Type: application/json
 ```
 
 **Errores:**
+
 - `404`: Sesión no encontrada
 - `400`: Sesión ya finalizada
 
 #### 2.3 Obtener Sesión
+
 ```http
 GET /api/sessions/:id
 ```
 
 **Respuesta exitosa (200):**
+
 ```json
 {
   "success": true,
@@ -203,12 +224,14 @@ GET /api/sessions/:id
 ### 3. Mediciones
 
 #### 3.1 Registrar Medición (Pie Izquierdo)
+
 ```http
 POST /api/measurements/left
 Content-Type: application/json
 ```
 
 **Body:**
+
 ```json
 {
   "sessionId": 1,
@@ -219,6 +242,7 @@ Content-Type: application/json
 ```
 
 **Respuesta exitosa (201):**
+
 ```json
 {
   "success": true,
@@ -238,11 +262,13 @@ Content-Type: application/json
 **Nota:** El servidor intentará sincronizar esta medición con una del pie derecho. Si encuentra una pareja dentro de la ventana de 3 segundos, emitirá un evento Socket.IO `measurement:new` con ambas mediciones.
 
 **Errores:**
+
 - `400`: Datos inválidos (peso fuera de rango, sessionId faltante, etc.)
 - `404`: Sesión no encontrada
 - `409`: Sesión ya finalizada
 
 #### 3.2 Registrar Medición (Pie Derecho)
+
 ```http
 POST /api/measurements/right
 Content-Type: application/json
@@ -251,21 +277,25 @@ Content-Type: application/json
 **Body y respuesta:** Idénticos a 3.1, pero con `"foot": "right"`
 
 #### 3.3 Obtener Mediciones de una Sesión
+
 ```http
 GET /api/sessions/:id/measurements
 ```
 
 **Query Parameters (opcionales):**
+
 - `limit`: Número máximo de resultados (default: 100)
 - `offset`: Offset para paginación (default: 0)
 - `paired`: Filtrar solo mediciones emparejadas (`true`/`false`)
 
 **Ejemplo:**
+
 ```http
 GET /api/sessions/1/measurements?limit=20&paired=true
 ```
 
 **Respuesta exitosa (200):**
+
 ```json
 {
   "success": true,
@@ -302,6 +332,7 @@ GET /api/sessions/1/measurements?limit=20&paired=true
 ### Conexión
 
 **Cliente se conecta:**
+
 ```javascript
 import io from 'socket.io-client';
 
@@ -315,9 +346,11 @@ socket.on('connect', () => {
 ### Eventos del Servidor → Cliente
 
 #### 1. `measurement:new`
+
 Emitido cuando se registra una nueva medición (emparejada o individual).
 
 **Payload (medición emparejada):**
+
 ```json
 {
   "type": "paired",
@@ -344,6 +377,7 @@ Emitido cuando se registra una nueva medición (emparejada o individual).
 ```
 
 **Payload (medición individual - timeout):**
+
 ```json
 {
   "type": "unpaired",
@@ -359,14 +393,17 @@ Emitido cuando se registra una nueva medición (emparejada o individual).
 ```
 
 **Balance Status:**
+
 - `"good"`: diferencia < 10%
 - `"warning"`: diferencia 10-20%
 - `"critical"`: diferencia > 20%
 
 #### 2. `session:started`
+
 Emitido cuando se inicia una nueva sesión.
 
 **Payload:**
+
 ```json
 {
   "sessionId": 1,
@@ -377,9 +414,11 @@ Emitido cuando se inicia una nueva sesión.
 ```
 
 #### 3. `session:ended`
+
 Emitido cuando se finaliza una sesión.
 
 **Payload:**
+
 ```json
 {
   "sessionId": 1,
@@ -399,14 +438,14 @@ Emitido cuando se finaliza una sesión.
 
 ## Códigos de Estado HTTP
 
-| Código | Significado | Uso |
-|--------|-------------|-----|
-| 200 | OK | Solicitud exitosa (GET, PATCH) |
-| 201 | Created | Recurso creado exitosamente (POST) |
-| 400 | Bad Request | Datos inválidos o faltantes |
-| 404 | Not Found | Recurso no encontrado |
-| 409 | Conflict | Conflicto (ej: sesión ya activa) |
-| 500 | Internal Server Error | Error del servidor |
+| Código | Significado           | Uso                                |
+| ------ | --------------------- | ---------------------------------- |
+| 200    | OK                    | Solicitud exitosa (GET, PATCH)     |
+| 201    | Created               | Recurso creado exitosamente (POST) |
+| 400    | Bad Request           | Datos inválidos o faltantes        |
+| 404    | Not Found             | Recurso no encontrado              |
+| 409    | Conflict              | Conflicto (ej: sesión ya activa)   |
+| 500    | Internal Server Error | Error del servidor                 |
 
 ---
 
@@ -429,6 +468,7 @@ Todos los errores siguen este formato:
 ```
 
 **Códigos de Error Comunes:**
+
 - `INVALID_INPUT`: Datos de entrada inválidos
 - `NOT_FOUND`: Recurso no encontrado
 - `CONFLICT`: Conflicto de estado
@@ -440,13 +480,16 @@ Todos los errores siguen este formato:
 ## Validaciones
 
 ### Pacientes
+
 - `name`: String, 1-100 caracteres, requerido
 
 ### Sesiones
+
 - `patientId`: Integer, debe existir, requerido
 - `notes`: String, 0-500 caracteres, opcional
 
 ### Mediciones
+
 - `sessionId`: Integer, debe existir y estar activa, requerido
 - `weight`: Float, 1-300 kg, requerido
 - `duration`: Integer, 100-5000 ms, opcional
@@ -503,4 +546,3 @@ curl http://localhost:3000/api/sessions/1/measurements
 **Documento creado:** 2025-10-03  
 **Versión:** 1.0  
 **Autor:** Equipo SmartRehabBar
-
