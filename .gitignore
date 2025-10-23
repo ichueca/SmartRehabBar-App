@@ -45,4 +45,5 @@ coverage/
 *.tmp
 *.temp
 .cache/
-
+.docs/PLAN_IMPLEMENTACION.md
+.docs/PLAN_IMPLEMENTACION.pdf
