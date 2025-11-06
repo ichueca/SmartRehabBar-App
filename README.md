@@ -268,16 +268,7 @@ Este proyecto es de código abierto y está disponible para fines educativos.
 
 ## 👥 Autor
 
-Proyecto desarrollado por [Iñigo Chueca](mailto:inigo.chueca@zabalburu.org) ([Zabalburu Ikastextxea](https://www.zabalburu.org)) para el proyecto de innovación SmartRehabBar subvencionado por el Gobierno Vasco a través de [Tknika](https://tknika.eus/) 
-
-
-
-Participan:
-
-
-
-- Jonhatan Arizala ([La Salle Berrozpe](https://lasalleberrozpe.eus))
-- Ainhoa Domínguez ([Nazaret Zentroa](https://nazaret.eus/))
+Proyecto desarrollado por [Iñigo Chueca](mailto:inigo.chueca@zabalburu.org)  ([Zabalburu Ikastextxea](https://www.zabalburu.org)), Jonathan Arizala ([La Salle Berrozpe](https://lasalleberrozpe.eus)) y Ainhoa Domínguez ([Nazaret Zentroa](https://nazaret.eus/)) para el proyecto de innovación SmartRehabBar subvencionado por el Gobierno Vasco a través de [Tknika](https://tknika.eus/) 
 
 ---
 
