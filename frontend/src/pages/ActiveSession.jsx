@@ -25,9 +25,20 @@ const ActiveSession = () => {
   useEffect(() => {
     if (socketMeasurements.length > 0) {
       const latestMeasurement = socketMeasurements[0]
+
+      // Determinar sessionId según el tipo de medición
+      let measurementSessionId = null
+      if (latestMeasurement.sessionId) {
+        // Medición individual de hardware
+        measurementSessionId = latestMeasurement.sessionId
+      } else if (latestMeasurement.left?.sessionId) {
+        // Medición emparejada del sistema normal
+        measurementSessionId = latestMeasurement.left.sessionId
+      }
+
       // Solo agregar si pertenece a esta sesión
-      if (latestMeasurement.sessionId === parseInt(id) || 
-          latestMeasurement.left?.sessionId === parseInt(id)) {
+      if (measurementSessionId === parseInt(id)) {
+        console.log('📊 Nueva medición recibida para sesión:', id, latestMeasurement)
         setSessionMeasurements(prev => [latestMeasurement, ...prev])
       }
     }
@@ -38,6 +49,65 @@ const ActiveSession = () => {
       setLoading(true)
       const data = await sessionsAPI.getById(id)
       setSession(data)
+
+      // Inicializar sessionMeasurements con las mediciones existentes
+      if (data.measurements && data.measurements.length > 0) {
+        // Convertir las mediciones del backend al formato que espera el frontend
+        const formattedMeasurements = []
+        const processedPairs = new Set()
+
+        for (const measurement of data.measurements) {
+          if (measurement.pairedMeasurementId && !processedPairs.has(measurement.id)) {
+            const pair = data.measurements.find(m => m.id === measurement.pairedMeasurementId)
+            if (pair) {
+              // Crear medición emparejada
+              const leftMeasurement = measurement.foot === 'left' ? measurement : pair
+              const rightMeasurement = measurement.foot === 'right' ? measurement : pair
+
+              const total = leftMeasurement.weight + rightMeasurement.weight
+              const leftPercentage = (leftMeasurement.weight / total) * 100
+              const rightPercentage = (rightMeasurement.weight / total) * 100
+              const difference = Math.abs(leftPercentage - rightPercentage)
+
+              formattedMeasurements.push({
+                paired: true,
+                left: {
+                  weight: leftMeasurement.weight,
+                  sessionId: parseInt(id)
+                },
+                right: {
+                  weight: rightMeasurement.weight,
+                  sessionId: parseInt(id)
+                },
+                balance: {
+                  leftPercentage: leftPercentage.toFixed(1),
+                  rightPercentage: rightPercentage.toFixed(1),
+                  difference: difference
+                },
+                timestamp: new Date(measurement.timestamp)
+              })
+
+              processedPairs.add(measurement.id)
+              processedPairs.add(pair.id)
+            }
+          } else if (!measurement.pairedMeasurementId && !processedPairs.has(measurement.id)) {
+            // Medición individual (no emparejada)
+            formattedMeasurements.push({
+              paired: false,
+              foot: measurement.foot,
+              weight: measurement.weight,
+              sessionId: parseInt(id),
+              timestamp: new Date(measurement.timestamp)
+            })
+
+            processedPairs.add(measurement.id)
+          }
+        }
+
+        // Ordenar por timestamp (más recientes primero)
+        formattedMeasurements.sort((a, b) => b.timestamp - a.timestamp)
+        setSessionMeasurements(formattedMeasurements)
+      }
     } catch (error) {
       console.error('Error loading session:', error)
       alert('Error al cargar sesión')
@@ -306,10 +376,14 @@ const ActiveSession = () => {
                           `👟 ${measurement.foot === 'left' ? 'Pie Izquierdo' : 'Pie Derecho'}`
                         )}
                       </span>
-                      {measurement.paired && (
+                      {measurement.paired ? (
                         <div className="mt-2 text-sm text-gray-700">
                           <span className="mr-4">Izq: <strong>{measurement.left.weight}kg</strong></span>
                           <span>Der: <strong>{measurement.right.weight}kg</strong></span>
+                        </div>
+                      ) : (
+                        <div className="mt-2 text-sm text-gray-700">
+                          <span>Peso: <strong>{measurement.weight}kg</strong></span>
                         </div>
                       )}
                     </div>

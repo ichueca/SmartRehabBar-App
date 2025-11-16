@@ -13,7 +13,8 @@
     "build-frontend": "cd frontend && npm run build",
     "start": "cd backend && node src/server.js",
     "dev-backend": "cd backend && npm run dev",
-    "dev-frontend": "cd frontend && npm run dev"
+    "dev-frontend": "cd frontend && npm run dev",
+    "heroku-postbuild": "cd backend && npm install && cd ../frontend && npm install && npm run build"
   },
   "keywords": [
     "rehabilitation",

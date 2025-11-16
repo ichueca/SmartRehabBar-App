@@ -16,6 +16,18 @@ class SessionService {
       }
     })
   }
+
+  // Obtener cualquier sesión activa en el sistema
+  async getAnyActiveSession() {
+    return await prisma.session.findFirst({
+      where: {
+        endTime: null
+      },
+      include: {
+        patient: true
+      }
+    })
+  }
   
   // Calcular estadísticas de una sesión
   async calculateSessionStats(sessionId) {

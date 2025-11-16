@@ -36,6 +36,10 @@ const SessionSimulator = ({ onSessionStarted }) => {
   const [patients, setPatients] = useState([])
   const [loadingPatients, setLoadingPatients] = useState(false)
   const [progress, setProgress] = useState({ current: 0, total: 0 })
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [activeSessionToClose, setActiveSessionToClose] = useState(null)
+  const [activePatientName, setActivePatientName] = useState('')
+  const [pendingSimulation, setPendingSimulation] = useState(null)
 
   // Cargar pacientes cuando se abre el selector
   useEffect(() => {
@@ -107,25 +111,23 @@ const SessionSimulator = ({ onSessionStarted }) => {
       setIsSimulating(true)
       setShowProfileSelector(false)
 
-      // 1. Crear sesión (cerrar sesión activa si existe)
+      // 1. Crear sesión (mostrar confirmación si hay sesión activa)
       let session
       try {
         session = await sessionsAPI.start(patient.id)
       } catch (error) {
-        // Si hay una sesión activa, cerrarla primero
+        // Si hay una sesión activa, mostrar confirmación
         if (error.response?.status === 400 && error.response?.data?.activeSessionId) {
-          console.log('Cerrando sesión activa anterior...')
-          try {
-            await sessionsAPI.end(error.response.data.activeSessionId, 'Sesión cerrada automáticamente')
-          } catch (endError) {
-            // Si la sesión ya estaba finalizada, ignorar el error
-            if (endError.response?.status !== 400 || !endError.response?.data?.message?.includes('finalizada')) {
-              throw endError
-            }
-            console.log('La sesión ya estaba finalizada')
-          }
-          // Intentar crear la sesión nuevamente
-          session = await sessionsAPI.start(patient.id)
+          const activeSessionId = error.response.data.activeSessionId
+          const activePatientName = error.response.data.activePatientName || 'Paciente desconocido'
+
+          // Guardar datos para la confirmación
+          setActiveSessionToClose(activeSessionId)
+          setActivePatientName(activePatientName)
+          setPendingSimulation({ profile, patient })
+          setShowConfirmModal(true)
+          setIsSimulating(false)
+          return // Salir y esperar confirmación del usuario
         } else {
           throw error
         }
@@ -187,6 +189,92 @@ const SessionSimulator = ({ onSessionStarted }) => {
     setSelectedPatient(patient)
     setShowPatientSelector(false)
     setShowProfileSelector(true)
+  }
+
+  const handleConfirmSimulation = async () => {
+    try {
+      setShowConfirmModal(false)
+      setIsSimulating(true)
+
+      // Finalizar la sesión activa
+      await sessionsAPI.end(activeSessionToClose, 'Sesión cerrada para iniciar simulación')
+
+      // Continuar con la simulación
+      const { profile, patient } = pendingSimulation
+      await continueSimulation(profile, patient)
+
+    } catch (error) {
+      console.error('Error al confirmar simulación:', error)
+      alert('Error al finalizar sesión activa')
+      setIsSimulating(false)
+    } finally {
+      // Limpiar estados
+      setActiveSessionToClose(null)
+      setActivePatientName('')
+      setPendingSimulation(null)
+    }
+  }
+
+  const handleCancelSimulation = () => {
+    setShowConfirmModal(false)
+    setActiveSessionToClose(null)
+    setActivePatientName('')
+    setPendingSimulation(null)
+  }
+
+  const continueSimulation = async (profile, patient) => {
+    try {
+      // Crear la nueva sesión
+      const session = await sessionsAPI.start(patient.id)
+
+      if (onSessionStarted) {
+        onSessionStarted(session)
+      }
+
+      // Generar mediciones (20-30 pisadas)
+      const totalSteps = 20 + Math.floor(Math.random() * 11)
+      setProgress({ current: 0, total: totalSteps })
+
+      for (let i = 0; i < totalSteps; i++) {
+        const { leftWeight, rightWeight, duration } = generateMeasurementPair(profile, i + 1)
+
+        // Enviar medición izquierda
+        const leftTimestamp = new Date().toISOString()
+        await measurementsAPI.create('left', {
+          sessionId: session.id,
+          weight: leftWeight,
+          duration,
+          timestamp: leftTimestamp
+        })
+
+        // Pequeña pausa entre pies (50-150ms)
+        await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100))
+
+        // Enviar medición derecha
+        const rightTimestamp = new Date().toISOString()
+        await measurementsAPI.create('right', {
+          sessionId: session.id,
+          weight: rightWeight,
+          duration,
+          timestamp: rightTimestamp
+        })
+
+        setProgress({ current: i + 1, total: totalSteps })
+
+        // Pausa entre pisadas (1-2 segundos)
+        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000))
+      }
+
+      // Simulación completada
+      setProgress({ current: 0, total: 0 })
+      setIsSimulating(false)
+
+    } catch (error) {
+      console.error('Error en simulación:', error)
+      alert('Error al simular sesión')
+      setIsSimulating(false)
+      setProgress({ current: 0, total: 0 })
+    }
   }
 
   const handleProfileSelect = (profile) => {
@@ -309,6 +397,51 @@ const SessionSimulator = ({ onSessionStarted }) => {
             >
               Cancelar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <span className="text-yellow-600 text-xl">⚠️</span>
+                </div>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Sesión Activa Detectada
+                </h3>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-sm text-gray-600">
+                Hay una sesión activa en el sistema para <strong>{activePatientName}</strong>.
+                Para iniciar la simulación, la sesión actual será finalizada automáticamente.
+              </p>
+              <p className="text-sm text-gray-800 mt-2 font-medium">
+                ¿Deseas continuar y finalizar la sesión activa?
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCancelSimulation}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmSimulation}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Sí, Finalizar y Simular
+              </button>
+            </div>
           </div>
         </div>
       )}

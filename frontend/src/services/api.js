@@ -59,12 +59,17 @@ export const sessionsAPI = {
     const response = await fetch(`${API_BASE_URL}/sessions`)
     return handleResponse(response)
   },
-  
+
+  getActive: async () => {
+    const response = await fetch(`${API_BASE_URL}/sessions/active`)
+    return handleResponse(response)
+  },
+
   getById: async (id) => {
     const response = await fetch(`${API_BASE_URL}/sessions/${id}`)
     return handleResponse(response)
   },
-  
+
   start: async (patientId) => {
     const response = await fetch(`${API_BASE_URL}/sessions`, {
       method: 'POST',
@@ -73,7 +78,7 @@ export const sessionsAPI = {
     })
     return handleResponse(response)
   },
-  
+
   end: async (id, notes = '') => {
     const response = await fetch(`${API_BASE_URL}/sessions/${id}`, {
       method: 'PATCH',

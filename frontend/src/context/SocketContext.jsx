@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
+import { sessionsAPI } from '../services/api'
 
 const SocketContext = createContext(null)
 
@@ -16,8 +17,22 @@ export const SocketProvider = ({ children }) => {
   const [connected, setConnected] = useState(false)
   const [measurements, setMeasurements] = useState([])
   const [sessions, setSessions] = useState([])
+  const [activeSessions, setActiveSessions] = useState([])
+
+  // Función para cargar sesiones activas
+  const loadActiveSessions = async () => {
+    try {
+      const sessions = await sessionsAPI.getActive()
+      setActiveSessions(sessions)
+    } catch (error) {
+      console.error('Error loading active sessions:', error)
+    }
+  }
 
   useEffect(() => {
+    // Cargar sesiones activas al inicializar
+    loadActiveSessions()
+
     // Conectar a Socket.IO
     // En producción, conectar al mismo servidor. En desarrollo, a localhost:5000
     const socketUrl = import.meta.env.PROD ? window.location.origin : 'http://localhost:5000'
@@ -45,13 +60,17 @@ export const SocketProvider = ({ children }) => {
     socketInstance.on('session:started', (session) => {
       console.log('🟢 Sesión iniciada:', session)
       setSessions(prev => [session, ...prev])
+      // Recargar sesiones activas
+      loadActiveSessions()
     })
 
     socketInstance.on('session:ended', (session) => {
       console.log('🔴 Sesión finalizada:', session)
-      setSessions(prev => 
+      setSessions(prev =>
         prev.map(s => s.id === session.id ? session : s)
       )
+      // Recargar sesiones activas
+      loadActiveSessions()
     })
 
     setSocket(socketInstance)
@@ -67,8 +86,11 @@ export const SocketProvider = ({ children }) => {
     connected,
     measurements,
     sessions,
+    activeSessions,
+    loadActiveSessions,
     clearMeasurements: () => setMeasurements([]),
-    clearSessions: () => setSessions([])
+    clearSessions: () => setSessions([]),
+    clearActiveSessions: () => setActiveSessions([])
   }
 
   return (

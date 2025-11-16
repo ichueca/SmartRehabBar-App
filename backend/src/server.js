@@ -7,6 +7,7 @@ import dotenv from 'dotenv'
 import patientsRouter from './routes/patients.js'
 import sessionsRouter from './routes/sessions.js'
 import measurementsRouter from './routes/measurements.js'
+import hardwareRouter from './routes/hardware.js'
 import { errorHandler, notFound } from './middleware/errorHandler.js'
 import socketService from './services/socketService.js'
 
@@ -46,6 +47,7 @@ app.get('/health', (req, res) => {
 app.use('/api/patients', patientsRouter)
 app.use('/api/sessions', sessionsRouter)
 app.use('/api/measurements', measurementsRouter)
+app.use('/api/hardware', hardwareRouter)
 
 // API info endpoint
 app.get('/api', (req, res) => {

@@ -10,6 +10,8 @@ const PatientDetail = () => {
   const [patient, setPatient] = useState(null)
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [activeSessionToClose, setActiveSessionToClose] = useState(null)
 
   useEffect(() => {
     loadPatientData()
@@ -35,8 +37,39 @@ const PatientDetail = () => {
       navigate(`/active-session/${session.id}`)
     } catch (error) {
       console.error('Error starting session:', error)
-      alert(error.message || 'Error al iniciar sesión')
+
+      // Si el error es porque ya hay una sesión activa, mostrar confirmación
+      if (error.response?.status === 400 && error.response?.data?.activeSessionId) {
+        const activeSessionId = error.response.data.activeSessionId
+        setActiveSessionToClose(activeSessionId)
+        setShowConfirmModal(true)
+      } else {
+        alert(error.message || 'Error al iniciar sesión')
+      }
     }
+  }
+
+  const handleConfirmNewSession = async () => {
+    try {
+      // Primero finalizar la sesión activa
+      await sessionsAPI.end(activeSessionToClose, 'Sesión cerrada para iniciar nueva sesión')
+
+      // Luego crear la nueva sesión
+      const session = await sessionsAPI.start(parseInt(id))
+      navigate(`/active-session/${session.id}`)
+
+      // Cerrar modal
+      setShowConfirmModal(false)
+      setActiveSessionToClose(null)
+    } catch (error) {
+      console.error('Error creating new session:', error)
+      alert('Error al crear nueva sesión')
+    }
+  }
+
+  const handleCancelNewSession = () => {
+    setShowConfirmModal(false)
+    setActiveSessionToClose(null)
   }
 
   if (loading) {
@@ -60,13 +93,41 @@ const PatientDetail = () => {
           <h2 className="text-3xl font-bold text-gray-900">{patient.name}</h2>
           <p className="text-gray-600 mt-1">ID: {patient.id}</p>
         </div>
-        <button
-          onClick={handleStartSession}
-          disabled={activeSessions.length > 0}
-          className={`btn-primary ${activeSessions.length > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          🟢 Iniciar Sesión
-        </button>
+        {activeSessions.length > 0 ? (
+          <div className="text-right">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-800">
+                    🟢 Sesión Activa
+                  </p>
+                  <p className="text-xs text-green-600">
+                    Iniciada: {format(new Date(activeSessions[0].startTime), "d 'de' MMMM, HH:mm", { locale: es })}
+                  </p>
+                </div>
+                <Link
+                  to={`/active-session/${activeSessions[0].id}`}
+                  className="btn-primary text-sm"
+                >
+                  Ver Sesión
+                </Link>
+              </div>
+            </div>
+            <button
+              onClick={handleStartSession}
+              className="btn-secondary text-sm"
+            >
+              🔄 Nueva Sesión
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleStartSession}
+            className="btn-primary"
+          >
+            🟢 Iniciar Sesión
+          </button>
+        )}
       </div>
 
       {/* Patient Info */}
@@ -144,6 +205,51 @@ const PatientDetail = () => {
           </div>
         )}
       </div>
+
+      {/* Modal de Confirmación */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <span className="text-yellow-600 text-xl">⚠️</span>
+                </div>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Sesión Activa Detectada
+                </h3>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-sm text-gray-600">
+                Ya hay una sesión activa en el sistema. Para iniciar una nueva sesión,
+                la sesión actual será finalizada automáticamente.
+              </p>
+              <p className="text-sm text-gray-800 mt-2 font-medium">
+                ¿Deseas continuar y finalizar la sesión activa?
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCancelNewSession}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmNewSession}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Sí, Finalizar y Crear Nueva
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

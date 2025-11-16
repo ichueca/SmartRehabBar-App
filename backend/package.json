@@ -10,7 +10,16 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "node prisma/seed.js"
+    "prisma:seed": "node prisma/seed.js",
+    "simulate": "node src/scripts/simulate-hardware.js",
+    "simulate:normal": "node src/scripts/simulate-hardware.js --pattern normal",
+    "simulate:unbalanced": "node src/scripts/simulate-hardware.js --pattern unbalanced",
+    "simulate:limping": "node src/scripts/simulate-hardware.js --pattern limping",
+    "simulate:heroku": "node src/scripts/simulate-hardware.js --url https://smartrehabbar.herokuapp.com",
+    "simulate:heroku:normal": "node src/scripts/simulate-hardware.js --url https://smartrehabbar.herokuapp.com --pattern normal",
+    "simulate:heroku:unbalanced": "node src/scripts/simulate-hardware.js --url https://smartrehabbar.herokuapp.com --pattern unbalanced",
+    "simulate:heroku:limping": "node src/scripts/simulate-hardware.js --url https://smartrehabbar.herokuapp.com --pattern limping",
+    "test:heroku": "node src/scripts/test-heroku.js"
   },
   "keywords": [
     "rehabilitation",
@@ -20,15 +29,17 @@
   "author": "SmartRehabBar Team",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
+    "@prisma/client": "^5.7.1",
+    "axios": "^1.13.2",
+    "commander": "^14.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "socket.io": "^4.6.2",
-    "@prisma/client": "^5.7.1"
+    "express": "^4.18.2",
+    "socket.io": "^4.6.2"
   },
   "devDependencies": {
-    "prisma": "^5.7.1",
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "prisma": "^5.7.1"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

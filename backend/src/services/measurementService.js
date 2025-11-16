@@ -124,6 +124,79 @@ class MeasurementService {
   clearSessionBuffer(sessionId) {
     measurementBuffer.delete(sessionId)
   }
+
+  /**
+   * Crear medición directa desde hardware (sin emparejamiento automático)
+   * Se usa para sensores de hardware que envían mediciones independientes
+   */
+  async createFromHardware(sessionId, foot, weight) {
+    const measurementData = {
+      sessionId: parseInt(sessionId),
+      foot,
+      weight: parseFloat(weight),
+      duration: 0, // Hardware no proporciona duración
+      timestamp: new Date()
+    }
+
+    // Crear medición directamente en BD
+    const measurement = await prisma.measurement.create({
+      data: measurementData
+    })
+
+    return measurement
+  }
+
+  // Obtener mediciones recientes sin emparejar del pie opuesto
+  async getRecentUnpaired(sessionId, foot, timeWindowMs = 2000) {
+    const cutoffTime = new Date(Date.now() - timeWindowMs)
+
+    const measurements = await prisma.measurement.findMany({
+      where: {
+        sessionId: parseInt(sessionId),
+        foot: foot,
+        pairedMeasurementId: null, // Sin emparejar
+        timestamp: {
+          gte: cutoffTime
+        }
+      },
+      orderBy: {
+        timestamp: 'desc'
+      },
+      take: 5 // Máximo 5 candidatos
+    })
+
+    return measurements
+  }
+
+  // Crear emparejamiento entre dos mediciones
+  async createPair(measurement1, measurement2) {
+    // Determinar cuál es left y cuál es right
+    const leftMeasurement = measurement1.foot === 'left' ? measurement1 : measurement2
+    const rightMeasurement = measurement1.foot === 'right' ? measurement1 : measurement2
+
+    // Calcular balance
+    const balance = this.calculateBalance(leftMeasurement.weight, rightMeasurement.weight)
+
+    // Actualizar ambas mediciones para marcarlas como emparejadas
+    await prisma.measurement.update({
+      where: { id: leftMeasurement.id },
+      data: { pairedMeasurementId: rightMeasurement.id }
+    })
+
+    await prisma.measurement.update({
+      where: { id: rightMeasurement.id },
+      data: { pairedMeasurementId: leftMeasurement.id }
+    })
+
+    // Retornar formato compatible con el frontend
+    return {
+      paired: true,
+      left: leftMeasurement,
+      right: rightMeasurement,
+      balance: balance,
+      sessionId: leftMeasurement.sessionId
+    }
+  }
 }
 
 export default new MeasurementService()

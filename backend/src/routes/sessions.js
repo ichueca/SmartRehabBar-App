@@ -8,6 +8,30 @@ import socketService from '../services/socketService.js'
 const router = express.Router()
 const prisma = new PrismaClient()
 
+// GET /api/sessions/active - Listar todas las sesiones activas
+router.get('/active', async (req, res, next) => {
+  try {
+    const activeSessions = await prisma.session.findMany({
+      where: {
+        endTime: null
+      },
+      include: {
+        patient: true,
+        _count: {
+          select: { measurements: true }
+        }
+      },
+      orderBy: {
+        startTime: 'desc'
+      }
+    })
+
+    res.json(activeSessions)
+  } catch (error) {
+    next(error)
+  }
+})
+
 // GET /api/sessions - Listar todas las sesiones
 router.get('/', async (req, res, next) => {
   try {
@@ -55,12 +79,14 @@ router.post('/', validateSession, async (req, res, next) => {
       })
     }
     
-    const activeSession = await sessionService.getActiveSession(patientId)
+    // Verificar si hay alguna sesión activa en el sistema (no solo del paciente)
+    const activeSession = await sessionService.getAnyActiveSession()
     if (activeSession) {
       return res.status(400).json({
         error: 'Bad request',
         message: 'El paciente ya tiene una sesi�n activa',
-        activeSessionId: activeSession.id
+        activeSessionId: activeSession.id,
+        activePatientName: activeSession.patient.name
       })
     }
     
