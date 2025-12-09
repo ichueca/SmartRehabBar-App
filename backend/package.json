@@ -15,10 +15,10 @@
     "simulate:normal": "node src/scripts/simulate-hardware.js --pattern normal",
     "simulate:unbalanced": "node src/scripts/simulate-hardware.js --pattern unbalanced",
     "simulate:limping": "node src/scripts/simulate-hardware.js --pattern limping",
-    "simulate:heroku": "node src/scripts/simulate-hardware.js --url https://smartrehabbar.herokuapp.com",
-    "simulate:heroku:normal": "node src/scripts/simulate-hardware.js --url https://smartrehabbar.herokuapp.com --pattern normal",
-    "simulate:heroku:unbalanced": "node src/scripts/simulate-hardware.js --url https://smartrehabbar.herokuapp.com --pattern unbalanced",
-    "simulate:heroku:limping": "node src/scripts/simulate-hardware.js --url https://smartrehabbar.herokuapp.com --pattern limping",
+    "simulate:heroku": "node src/scripts/simulate-hardware.js --url https://smartrehabbar-demo-7f620514b4ed.herokuapp.com",
+    "simulate:heroku:normal": "node src/scripts/simulate-hardware.js --url https://smartrehabbar-demo-7f620514b4ed.herokuapp.com --pattern normal",
+    "simulate:heroku:unbalanced": "node src/scripts/simulate-hardware.js --url https://smartrehabbar-demo-7f620514b4ed.herokuapp.com --pattern unbalanced",
+    "simulate:heroku:limping": "node src/scripts/simulate-hardware.js --url https://smartrehabbar-demo-7f620514b4ed.herokuapp.com --pattern limping",
     "test:heroku": "node src/scripts/test-heroku.js"
   },
   "keywords": [

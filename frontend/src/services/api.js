@@ -86,6 +86,13 @@ export const sessionsAPI = {
       body: JSON.stringify({ notes })
     })
     return handleResponse(response)
+  },
+
+  delete: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/sessions/${id}`, {
+      method: 'DELETE'
+    })
+    return handleResponse(response)
   }
 }
 

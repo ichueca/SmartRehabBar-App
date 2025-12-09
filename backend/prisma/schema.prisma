@@ -20,13 +20,14 @@ model Patient {
 }
 
 model Session {
-  id           Int           @id @default(autoincrement())
-  patientId    Int           @map("patient_id")
-  startTime    DateTime      @map("start_time")
-  endTime      DateTime?     @map("end_time")
-  notes        String?
-  patient      Patient       @relation(fields: [patientId], references: [id])
-  measurements Measurement[]
+  id                  Int                   @id @default(autoincrement())
+  patientId           Int                   @map("patient_id")
+  startTime           DateTime              @map("start_time")
+  endTime             DateTime?             @map("end_time")
+  notes               String?
+  patient             Patient               @relation(fields: [patientId], references: [id])
+  measurements        Measurement[]
+  sitToStandSessions  SitToStandSession[]
 
   @@map("sessions")
 }
@@ -46,5 +47,36 @@ model Measurement {
   @@index([sessionId])
   @@index([timestamp])
   @@map("measurements")
+}
+
+model SitToStandSession {
+  id                    Int                      @id @default(autoincrement())
+  sessionId             Int                      @map("session_id")
+  startTime             DateTime                 @map("start_time")
+  endTime               DateTime?                @map("end_time")
+  durationSeconds       Float?                   @map("duration_seconds")
+  maxWeightLeft         Float?                   @map("max_weight_left")
+  maxWeightRight        Float?                   @map("max_weight_right")
+  symmetryPercentage    Float?                   @map("symmetry_percentage")
+  status                String                   @default("active") // "active", "completed", "cancelled"
+  session               Session                  @relation(fields: [sessionId], references: [id])
+  measurements          SitToStandMeasurement[]
+
+  @@index([sessionId])
+  @@map("sit_to_stand_sessions")
+}
+
+model SitToStandMeasurement {
+  id                    Int               @id @default(autoincrement())
+  sitToStandSessionId   Int               @map("sit_to_stand_session_id")
+  timestamp             DateTime
+  weightLeft            Float?            @map("weight_left")
+  weightRight           Float?            @map("weight_right")
+  elapsedSeconds        Float             @map("elapsed_seconds")
+  sitToStandSession     SitToStandSession @relation(fields: [sitToStandSessionId], references: [id])
+
+  @@index([sitToStandSessionId])
+  @@index([timestamp])
+  @@map("sit_to_stand_measurements")
 }
 

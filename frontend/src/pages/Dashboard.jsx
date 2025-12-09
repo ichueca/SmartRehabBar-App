@@ -5,6 +5,7 @@ import { patientsAPI, sessionsAPI } from '../services/api'
 import { format } from 'date-fns'
 import es from 'date-fns/locale/es'
 import HardwareSessionStarter from '../components/HardwareSessionStarter'
+import SitToStandStarter from '../components/SitToStandStarter'
 import { getBalanceLevel } from '../utils/balanceUtils'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
@@ -25,6 +26,11 @@ const Dashboard = () => {
   const handleSessionStarted = (session) => {
     // Navegar a la sesión activa cuando se inicia la simulación
     navigate(`/active-session/${session.id}`)
+  }
+
+  const handleSitToStandStarted = (sitToStandSession) => {
+    // Navegar a la vista de sit-to-stand cuando se inicia
+    navigate(`/sit-to-stand/${sitToStandSession.id}`)
   }
 
   const handleEndSession = async () => {
@@ -375,6 +381,7 @@ const Dashboard = () => {
         </div>
         <div className="flex items-center space-x-4">
           <HardwareSessionStarter onSessionStarted={handleSessionStarted} />
+          <SitToStandStarter onSitToStandStarted={handleSitToStandStarted} />
           <div className="flex items-center space-x-2">
             <div className={`w-3 h-3 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
             <span className="text-sm text-gray-600">

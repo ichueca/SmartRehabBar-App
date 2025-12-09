@@ -38,6 +38,14 @@ router.get('/', async (req, res, next) => {
     const sessions = await prisma.session.findMany({
       include: {
         patient: true,
+        measurements: true,
+        sitToStandSessions: {
+          include: {
+            _count: {
+              select: { measurements: true }
+            }
+          }
+        },
         _count: {
           select: { measurements: true }
         }
@@ -166,29 +174,84 @@ router.patch('/:id', async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params
-    
+
     const session = await prisma.session.findUnique({
       where: { id: parseInt(id) },
       include: {
         patient: true,
         measurements: {
           orderBy: { timestamp: 'asc' }
+        },
+        sitToStandSessions: {
+          include: {
+            measurements: {
+              orderBy: { timestamp: 'asc' }
+            }
+          }
         }
       }
     })
-    
+
     if (!session) {
       return res.status(404).json({
         error: 'Not found',
         message: 'Sesi�n no encontrada'
       })
     }
-    
+
     const stats = await sessionService.calculateSessionStats(parseInt(id))
-    
+
     res.json({
       ...session,
       statistics: stats
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// DELETE /api/sessions/:id - Eliminar una sesión
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params
+
+    const session = await prisma.session.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        sitToStandSessions: true
+      }
+    })
+
+    if (!session) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'Sesión no encontrada'
+      })
+    }
+
+    // Eliminar en cascada: primero sit-to-stand measurements, luego sit-to-stand sessions, luego measurements, luego session
+    if (session.sitToStandSessions && session.sitToStandSessions.length > 0) {
+      for (const sts of session.sitToStandSessions) {
+        await prisma.sitToStandMeasurement.deleteMany({
+          where: { sitToStandSessionId: sts.id }
+        })
+      }
+      await prisma.sitToStandSession.deleteMany({
+        where: { sessionId: parseInt(id) }
+      })
+    }
+
+    await prisma.measurement.deleteMany({
+      where: { sessionId: parseInt(id) }
+    })
+
+    await prisma.session.delete({
+      where: { id: parseInt(id) }
+    })
+
+    res.json({
+      success: true,
+      message: 'Sesión eliminada correctamente'
     })
   } catch (error) {
     next(error)

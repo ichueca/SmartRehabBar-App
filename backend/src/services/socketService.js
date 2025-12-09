@@ -54,9 +54,55 @@ class SocketService {
       console.error('Socket.IO no está inicializado')
       return
     }
-    
+
     this.io.emit('session:ended', session)
     console.log(` Emitido: session:ended`, { sessionId: session.id })
+  }
+
+  // Emitir evento de sit-to-stand iniciado
+  emitSitToStandStarted(sitToStandSession) {
+    if (!this.io) {
+      console.error('Socket.IO no está inicializado')
+      return
+    }
+
+    this.io.emit('sit-to-stand:started', sitToStandSession)
+    console.log(` Emitido: sit-to-stand:started`, {
+      sitToStandId: sitToStandSession.id,
+      sessionId: sitToStandSession.sessionId
+    })
+  }
+
+  // Emitir evento de medición de sit-to-stand
+  emitSitToStandMeasurement(measurement, sitToStandSession) {
+    if (!this.io) {
+      console.error('Socket.IO no está inicializado')
+      return
+    }
+
+    this.io.emit('sit-to-stand:measurement', {
+      measurement: measurement,
+      sitToStandSession: sitToStandSession
+    })
+    console.log(` Emitido: sit-to-stand:measurement`, {
+      sitToStandId: sitToStandSession.id,
+      elapsedSeconds: measurement.elapsedSeconds
+    })
+  }
+
+  // Emitir evento de sit-to-stand finalizado
+  emitSitToStandEnded(sitToStandSession) {
+    if (!this.io) {
+      console.error('Socket.IO no está inicializado')
+      return
+    }
+
+    this.io.emit('sit-to-stand:ended', sitToStandSession)
+    console.log(` Emitido: sit-to-stand:ended`, {
+      sitToStandId: sitToStandSession.id,
+      durationSeconds: sitToStandSession.durationSeconds,
+      symmetryPercentage: sitToStandSession.symmetryPercentage
+    })
   }
 }
 

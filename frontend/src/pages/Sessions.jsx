@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { sessionsAPI } from '../services/api'
 import { format } from 'date-fns'
 import es from 'date-fns/locale/es'
@@ -9,6 +9,7 @@ const Sessions = () => {
   const [sessions, setSessions] = useState([])
   const [filter, setFilter] = useState('all') // all, active, completed
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     loadSessions()
@@ -24,6 +25,24 @@ const Sessions = () => {
       alert('Error al cargar sesiones')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDelete = async (sessionId, e) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!window.confirm('¿Estás seguro de que quieres eliminar esta sesión? Esta acción no se puede deshacer.')) {
+      return
+    }
+
+    try {
+      await sessionsAPI.delete(sessionId)
+      // Recargar sesiones después de eliminar
+      await loadSessions()
+    } catch (error) {
+      console.error('Error deleting session:', error)
+      alert('Error al eliminar sesión')
     }
   }
 
@@ -99,20 +118,31 @@ const Sessions = () => {
               balanceInfo = getBalanceLevel(session.statistics.averageBalance.difference)
             }
 
+            // Determinar tipo de sesión
+            const hasSitToStand = session.sitToStandSessions && session.sitToStandSessions.length > 0
+            const hasSteps = session.measurements && session.measurements.length > 0
+            const sessionType = hasSitToStand ? '🪑 Levantarse' : '🚶 Pisadas'
+            const sessionTypeColor = hasSitToStand ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+
             return (
-              <Link
+              <div
                 key={session.id}
-                to={`/sessions/${session.id}`}
-                className={`card hover:shadow-lg transition-shadow block ${
+                className={`card hover:shadow-lg transition-shadow ${
                   balanceInfo ? `border-l-4 ${balanceInfo.borderClass}` : ''
                 }`}
               >
                 <div className="flex justify-between items-start">
-                  <div className="flex-1">
+                  <div
+                    className="cursor-pointer flex-1"
+                    onClick={() => navigate(`/sessions/${session.id}`)}
+                  >
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="text-lg font-bold text-gray-900">
                         Sesión #{session.id}
                       </h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${sessionTypeColor}`}>
+                        {sessionType}
+                      </span>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                         session.endTime
                           ? 'bg-gray-100 text-gray-700'
@@ -126,40 +156,50 @@ const Sessions = () => {
                         </span>
                       )}
                     </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-                    <div>
-                      <p className="text-sm text-gray-600">Paciente</p>
-                      <p className="font-medium">{session.patient?.name || 'Desconocido'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Inicio</p>
-                      <p className="font-medium">
-                        {format(new Date(session.startTime), "d/MM/yyyy HH:mm", { locale: es })}
-                      </p>
-                    </div>
-                    {session.endTime && (
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
                       <div>
-                        <p className="text-sm text-gray-600">Duración</p>
+                        <p className="text-sm text-gray-600">Paciente</p>
+                        <p className="font-medium">{session.patient?.name || 'Desconocido'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Inicio</p>
                         <p className="font-medium">
-                          {Math.round((new Date(session.endTime) - new Date(session.startTime)) / 60000)} minutos
+                          {format(new Date(session.startTime), "d/MM/yyyy HH:mm", { locale: es })}
                         </p>
                       </div>
+                      {session.endTime && (
+                        <div>
+                          <p className="text-sm text-gray-600">Duración</p>
+                          <p className="font-medium">
+                            {Math.round((new Date(session.endTime) - new Date(session.startTime)) / 60000)} minutos
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {session.notes && (
+                      <p className="text-sm text-gray-600 mt-3">
+                        <span className="font-medium">Notas:</span> {session.notes}
+                      </p>
                     )}
                   </div>
-                  
-                  {session.notes && (
-                    <p className="text-sm text-gray-600 mt-3">
-                      <span className="font-medium">Notas:</span> {session.notes}
-                    </p>
-                  )}
-                </div>
-                
-                <div className="text-2xl ml-4">
-                  {session.endTime ? (balanceInfo ? balanceInfo.icon : '📋') : '🟢'}
+
+                  <div className="flex items-center space-x-3 ml-4">
+                    <div className="text-2xl">
+                      {session.endTime ? (balanceInfo ? balanceInfo.icon : '📋') : '🟢'}
+                    </div>
+                    {/* Botón de eliminar */}
+                    <button
+                      onClick={(e) => handleDelete(session.id, e)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                      title="Eliminar sesión"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
               </div>
-            </Link>
             )
           })}
         </div>

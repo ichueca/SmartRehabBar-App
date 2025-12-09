@@ -1,0 +1,45 @@
+RESUMEN EJECUTIVO - Correo para Equipo de Hardware
+
+ASUNTO: 🚀 SmartRehabBar: Instrucciones para Pruebas con Hardware Real (ESP32)
+
+PUNTOS CLAVE:
+
+1. SISTEMA DESPLEGADO ✅
+   - URL: https://smartrehabbar-demo-7f620514b4ed.herokuapp.com/
+   - Endpoints: /api/hardware/left?peso=XX.X y /api/hardware/right?peso=XX.X
+   - Funcionando 24/7 en Heroku
+
+2. PROBLEMA DE FRECUENCIA IDENTIFICADO ⚠️
+   - Enviar todas las señales (50-100 Hz) saturaría el servidor
+   - Causaría pérdida de datos y posible bloqueo
+   - Consumo excesivo de batería del ESP32
+
+3. SOLUCIÓN IMPLEMENTADA 🔧
+   - Filtro temporal: Máximo 10 Hz (100ms entre envíos)
+   - Filtro de cambio: Solo envía si peso cambia ≥0.5kg
+   - Filtros adicionales en servidor (50ms, 1kg)
+   - Código ESP32 completo proporcionado
+
+4. PASOS PARA PRUEBAS 📋
+   - Crear sesión en la web primero
+   - Configurar WiFi en ESP32
+   - Implementar funciones de lectura de sensores
+   - Monitorear logs en monitor serie
+
+5. ARCHIVOS PROPORCIONADOS 📁
+   - Correo completo con instrucciones detalladas
+   - Código ESP32 completo (.ino)
+   - Tabla de troubleshooting
+   - Ejemplos de respuestas del servidor
+
+6. OBJETIVOS DE LAS PRUEBAS 🎯
+   - Verificar conectividad ESP32 ↔ Heroku
+   - Validar mediciones en tiempo real
+   - Probar emparejamiento automático
+   - Confirmar estabilidad del sistema
+
+PRÓXIMOS PASOS:
+- Enviar correo al equipo de hardware
+- Coordinar sesión de pruebas
+- Documentar resultados
+- Ajustar parámetros si es necesario

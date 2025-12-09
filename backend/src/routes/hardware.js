@@ -2,6 +2,7 @@ import express from 'express'
 import sessionService from '../services/sessionService.js'
 import measurementService from '../services/measurementService.js'
 import socketService from '../services/socketService.js'
+import * as sitToStandService from '../services/sitToStandService.js'
 import { spawn } from 'child_process'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -61,6 +62,13 @@ router.get('/:foot', async (req, res) => {
         status: 'no_active_session',
         message: 'No hay sesión activa para registrar mediciones'
       })
+    }
+
+    // Verificar si hay sesión de sit-to-stand activa
+    const activeSitToStand = await sitToStandService.getActiveSitToStandSession()
+    if (activeSitToStand) {
+      // Procesar medición para sit-to-stand
+      return await processSitToStandMeasurement(foot, weight, activeSitToStand, res)
     }
     
     // Aplicar filtros para evitar saturación
@@ -196,8 +204,8 @@ router.post('/simulator/start', async (req, res) => {
     }
 
     // Verificar que hay una sesión activa
-    const activeSessions = await sessionService.getActiveSessions()
-    if (activeSessions.length === 0) {
+    const activeSession = await sessionService.getAnyActiveSession()
+    if (!activeSession) {
       return res.status(400).json({
         error: 'no_active_session',
         message: 'No hay sesión activa para iniciar el simulador'
@@ -281,5 +289,76 @@ router.get('/simulator/status', (req, res) => {
     pid: simulatorProcess?.pid || null
   })
 })
+
+/**
+ * Procesar medición para sesión de sit-to-stand
+ */
+async function processSitToStandMeasurement(foot, weight, activeSitToStand, res) {
+  try {
+    const now = Date.now()
+    const startTime = new Date(activeSitToStand.startTime).getTime()
+    const elapsedSeconds = (now - startTime) / 1000
+
+    // Cache para acumular mediciones de ambos pies
+    const cacheKey = `sit_to_stand_${activeSitToStand.id}`
+    let pendingMeasurement = recentMeasurements.get(cacheKey) || {}
+
+    // Actualizar peso del pie correspondiente
+    pendingMeasurement[`weight_${foot}`] = weight
+    pendingMeasurement.timestamp = now
+    pendingMeasurement.elapsedSeconds = elapsedSeconds
+
+    // Si tenemos mediciones de ambos pies (o han pasado 200ms), crear medición
+    const hasLeftWeight = pendingMeasurement.weight_left !== undefined
+    const hasRightWeight = pendingMeasurement.weight_right !== undefined
+    const timeThreshold = 200 // 200ms para esperar el otro pie
+
+    if ((hasLeftWeight && hasRightWeight) ||
+        (pendingMeasurement.lastUpdate && (now - pendingMeasurement.lastUpdate) > timeThreshold)) {
+
+      // Crear medición en base de datos
+      const measurement = await sitToStandService.addMeasurement(
+        activeSitToStand.id,
+        pendingMeasurement.weight_left || null,
+        pendingMeasurement.weight_right || null,
+        elapsedSeconds
+      )
+
+      // Emitir evento de medición sit-to-stand
+      socketService.emitSitToStandMeasurement(measurement, activeSitToStand)
+
+      // Limpiar cache
+      recentMeasurements.delete(cacheKey)
+
+      return res.json({
+        status: 'sit_to_stand_measurement',
+        message: 'Medición de levantarse procesada',
+        sitToStandId: activeSitToStand.id,
+        elapsedSeconds: elapsedSeconds,
+        measurement: measurement
+      })
+    } else {
+      // Guardar medición parcial en cache
+      pendingMeasurement.lastUpdate = now
+      recentMeasurements.set(cacheKey, pendingMeasurement)
+
+      return res.json({
+        status: 'sit_to_stand_partial',
+        message: 'Medición parcial de levantarse guardada',
+        sitToStandId: activeSitToStand.id,
+        elapsedSeconds: elapsedSeconds,
+        foot: foot,
+        weight: weight
+      })
+    }
+
+  } catch (error) {
+    console.error('Error processing sit-to-stand measurement:', error)
+    return res.status(500).json({
+      error: 'internal_error',
+      message: 'Error procesando medición de levantarse'
+    })
+  }
+}
 
 export default router

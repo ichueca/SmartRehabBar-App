@@ -8,6 +8,7 @@ import patientsRouter from './routes/patients.js'
 import sessionsRouter from './routes/sessions.js'
 import measurementsRouter from './routes/measurements.js'
 import hardwareRouter from './routes/hardware.js'
+import sitToStandRouter from './routes/sitToStand.js'
 import { errorHandler, notFound } from './middleware/errorHandler.js'
 import socketService from './services/socketService.js'
 
@@ -48,6 +49,7 @@ app.use('/api/patients', patientsRouter)
 app.use('/api/sessions', sessionsRouter)
 app.use('/api/measurements', measurementsRouter)
 app.use('/api/hardware', hardwareRouter)
+app.use('/api/sit-to-stand', sitToStandRouter)
 
 // API info endpoint
 app.get('/api', (req, res) => {
@@ -58,7 +60,9 @@ app.get('/api', (req, res) => {
     endpoints: {
       patients: '/api/patients',
       sessions: '/api/sessions',
-      measurements: '/api/measurements'
+      measurements: '/api/measurements',
+      hardware: '/api/hardware',
+      sitToStand: '/api/sit-to-stand'
     }
   })
 })

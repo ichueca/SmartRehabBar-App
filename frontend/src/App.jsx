@@ -6,6 +6,8 @@ import PatientDetail from './pages/PatientDetail'
 import Sessions from './pages/Sessions'
 import SessionDetail from './pages/SessionDetail'
 import ActiveSession from './pages/ActiveSession'
+import SitToStandView from './pages/SitToStandView'
+import SitToStandResults from './pages/SitToStandResults'
 import { SocketProvider } from './context/SocketContext'
 
 function App() {
@@ -19,6 +21,8 @@ function App() {
           <Route path="sessions" element={<Sessions />} />
           <Route path="sessions/:id" element={<SessionDetail />} />
           <Route path="active-session/:id" element={<ActiveSession />} />
+          <Route path="sit-to-stand/:id" element={<SitToStandView />} />
+          <Route path="sit-to-stand-results/:id" element={<SitToStandResults />} />
         </Route>
       </Routes>
     </SocketProvider>

@@ -191,7 +191,7 @@ const HardwareSessionStarter = ({ onSessionStarted }) => {
             <span>Iniciando...</span>
           </span>
         ) : (
-          '🎯 Iniciar Sesión en Tiempo Real'
+          '🚶 Iniciar Medición Pisadas'
         )}
       </button>
 
@@ -258,7 +258,7 @@ const HardwareSessionStarter = ({ onSessionStarted }) => {
             <div className="mb-6">
               <p className="text-sm text-gray-600">
                 Hay una sesión activa en el sistema para <strong>{activePatientName}</strong>.
-                Para iniciar la nueva sesión, la sesión actual será finalizada automáticamente.
+                Para iniciar la nueva medición de pisadas, la sesión actual será finalizada automáticamente.
               </p>
               <p className="text-sm text-gray-800 mt-2 font-medium">
                 ¿Deseas continuar y finalizar la sesión activa?
