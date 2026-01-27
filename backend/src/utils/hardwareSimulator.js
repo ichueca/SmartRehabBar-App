@@ -25,6 +25,9 @@ class HardwareSimulator {
     this.stepPhase = 'rest' // 'rest', 'stepping', 'peak', 'release'
     this.stepStartTime = 0
     this.lastMeasurementTime = { left: 0, right: 0 }
+    // Simular batería que se va descargando
+    this.batteryLevel = { left: 95, right: 92 } // Empezar con niveles diferentes
+    this.batteryDrainRate = 0.001 // % por medición
   }
 
   /**
@@ -192,11 +195,14 @@ class HardwareSimulator {
    * Enviar medición individual
    */
   async sendMeasurement(foot, weight) {
-    const url = `${this.baseUrl}/api/hardware/${foot}?peso=${weight.toFixed(2)}`
-    
+    // Simular descarga de batería
+    this.batteryLevel[foot] = Math.max(0, this.batteryLevel[foot] - this.batteryDrainRate)
+
+    const url = `${this.baseUrl}/api/hardware/${foot}?peso=${weight.toFixed(2)}&bat=${this.batteryLevel[foot].toFixed(2)}`
+
     try {
       const response = await axios.get(url, { timeout: 1000 })
-      
+
       if (response.data.status === 'ok') {
         console.log(`✅ ${foot}: ${weight.toFixed(1)}kg → ${response.data.patientName}`)
       } else if (response.data.status === 'no_active_session') {

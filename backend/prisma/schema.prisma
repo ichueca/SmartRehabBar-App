@@ -37,6 +37,7 @@ model Measurement {
   sessionId            Int          @map("session_id")
   foot                 String       // "left" or "right"
   weight               Float
+  batteryLevel         Float?       @map("battery_level") // Battery percentage (0-100)
   duration             Int?         // milliseconds
   timestamp            DateTime
   pairedMeasurementId  Int?         @unique @map("paired_measurement_id")
@@ -72,6 +73,8 @@ model SitToStandMeasurement {
   timestamp             DateTime
   weightLeft            Float?            @map("weight_left")
   weightRight           Float?            @map("weight_right")
+  batteryLevelLeft      Float?            @map("battery_level_left") // Battery percentage for left sensor (0-100)
+  batteryLevelRight     Float?            @map("battery_level_right") // Battery percentage for right sensor (0-100)
   elapsedSeconds        Float             @map("elapsed_seconds")
   sitToStandSession     SitToStandSession @relation(fields: [sitToStandSessionId], references: [id])
 

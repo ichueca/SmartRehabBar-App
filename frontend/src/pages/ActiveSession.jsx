@@ -6,11 +6,12 @@ import { format } from 'date-fns'
 import es from 'date-fns/locale/es'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
 import { getBalanceLevel } from '../utils/balanceUtils'
+import BatteryIndicator from '../components/BatteryIndicator'
 
 const ActiveSession = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { connected, measurements: socketMeasurements } = useSocket()
+  const { connected, measurements: socketMeasurements, batteryLevels } = useSocket()
   const [session, setSession] = useState(null)
   const [sessionMeasurements, setSessionMeasurements] = useState([])
   const [loading, setLoading] = useState(true)
@@ -197,6 +198,11 @@ const ActiveSession = () => {
           <p className="text-gray-600 mt-1">
             {session.patient?.name || 'Paciente desconocido'}
           </p>
+          {/* Indicadores de batería */}
+          <div className="flex space-x-2 mt-2">
+            <BatteryIndicator level={batteryLevels.left} foot="left" />
+            <BatteryIndicator level={batteryLevels.right} foot="right" />
+          </div>
         </div>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
@@ -366,16 +372,27 @@ const ActiveSession = () => {
                     : 'bg-gray-50 border-gray-200'
                 }`}>
                   <div className="flex justify-between items-center">
-                    <div>
-                      <span className="font-medium">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium">
+                          {measurement.paired ? (
+                            <>
+                              {balanceInfo?.icon} Pisada Completa
+                            </>
+                          ) : (
+                            `👟 ${measurement.foot === 'left' ? 'Pie Izquierdo' : 'Pie Derecho'}`
+                          )}
+                        </span>
+                        {/* Indicadores de batería */}
                         {measurement.paired ? (
-                          <>
-                            {balanceInfo?.icon} Pisada Completa
-                          </>
+                          <div className="flex space-x-1">
+                            <BatteryIndicator level={measurement.left?.batteryLevel} foot="left" />
+                            <BatteryIndicator level={measurement.right?.batteryLevel} foot="right" />
+                          </div>
                         ) : (
-                          `👟 ${measurement.foot === 'left' ? 'Pie Izquierdo' : 'Pie Derecho'}`
+                          <BatteryIndicator level={measurement.measurement?.batteryLevel || measurement.batteryLevel} foot={measurement.foot} />
                         )}
-                      </span>
+                      </div>
                       {measurement.paired ? (
                         <div className="mt-2 text-sm text-gray-700">
                           <span className="mr-4">Izq: <strong>{measurement.left.weight}kg</strong></span>

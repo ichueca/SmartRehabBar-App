@@ -18,6 +18,7 @@ export const SocketProvider = ({ children }) => {
   const [measurements, setMeasurements] = useState([])
   const [sessions, setSessions] = useState([])
   const [activeSessions, setActiveSessions] = useState([])
+  const [batteryLevels, setBatteryLevels] = useState({ left: null, right: null })
 
   // Función para cargar sesiones activas
   const loadActiveSessions = async () => {
@@ -54,6 +55,22 @@ export const SocketProvider = ({ children }) => {
     socketInstance.on('measurement:new', (data) => {
       console.log('📊 Nueva medición:', data)
       setMeasurements(prev => [data, ...prev].slice(0, 100)) // Mantener últimas 100
+
+      // Actualizar niveles de batería
+      if (data.paired) {
+        if (data.left?.batteryLevel !== null && data.left?.batteryLevel !== undefined) {
+          setBatteryLevels(prev => ({ ...prev, left: data.left.batteryLevel }))
+        }
+        if (data.right?.batteryLevel !== null && data.right?.batteryLevel !== undefined) {
+          setBatteryLevels(prev => ({ ...prev, right: data.right.batteryLevel }))
+        }
+      } else if (data.measurement) {
+        const foot = data.foot
+        const level = data.measurement.batteryLevel
+        if (level !== null && level !== undefined) {
+          setBatteryLevels(prev => ({ ...prev, [foot]: level }))
+        }
+      }
     })
 
     // Escuchar eventos de sesiones
@@ -87,10 +104,12 @@ export const SocketProvider = ({ children }) => {
     measurements,
     sessions,
     activeSessions,
+    batteryLevels,
     loadActiveSessions,
     clearMeasurements: () => setMeasurements([]),
     clearSessions: () => setSessions([]),
-    clearActiveSessions: () => setActiveSessions([])
+    clearActiveSessions: () => setActiveSessions([]),
+    clearBatteryLevels: () => setBatteryLevels({ left: null, right: null })
   }
 
   return (

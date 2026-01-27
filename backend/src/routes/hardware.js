@@ -35,8 +35,8 @@ let simulatorProcess = null
 router.get('/:foot', async (req, res) => {
   try {
     const { foot } = req.params
-    const { peso } = req.query
-    
+    const { peso, bat } = req.query
+
     // Validar parámetros
     if (!foot || !['left', 'right'].includes(foot)) {
       return res.status(400).json({
@@ -44,17 +44,27 @@ router.get('/:foot', async (req, res) => {
         message: 'foot must be "left" or "right"'
       })
     }
-    
+
     if (!peso || isNaN(parseFloat(peso))) {
       return res.status(400).json({
         error: 'Invalid peso parameter',
         message: 'peso must be a valid number'
       })
     }
-    
+
     const weight = parseFloat(peso)
+    const batteryLevel = bat ? parseFloat(bat) : null
+
+    // Validar nivel de batería si se proporciona
+    if (batteryLevel !== null && (isNaN(batteryLevel) || batteryLevel < 0 || batteryLevel > 100)) {
+      return res.status(400).json({
+        error: 'Invalid bat parameter',
+        message: 'bat must be a number between 0 and 100'
+      })
+    }
+
     const now = Date.now()
-    
+
     // Verificar si hay sesión activa
     const activeSession = await sessionService.getAnyActiveSession()
     if (!activeSession) {
@@ -68,7 +78,7 @@ router.get('/:foot', async (req, res) => {
     const activeSitToStand = await sitToStandService.getActiveSitToStandSession()
     if (activeSitToStand) {
       // Procesar medición para sit-to-stand
-      return await processSitToStandMeasurement(foot, weight, activeSitToStand, res)
+      return await processSitToStandMeasurement(foot, weight, batteryLevel, activeSitToStand, res)
     }
     
     // Aplicar filtros para evitar saturación
@@ -104,21 +114,24 @@ router.get('/:foot', async (req, res) => {
     const measurement = await measurementService.createFromHardware(
       activeSession.id,
       foot,
-      weight
+      weight,
+      batteryLevel
     )
-    
+
     // Actualizar cache de mediciones recientes
     recentMeasurements.set(recentKey, {
       timestamp: now,
       weight: weight,
+      batteryLevel: batteryLevel,
       sessionId: activeSession.id
     })
-    
+
     // Emitir medición individual
     socketService.emitMeasurement({
       paired: false,
       foot: foot,
       weight: measurement.weight,
+      batteryLevel: measurement.batteryLevel,
       sessionId: activeSession.id,
       measurement: measurement
     })
@@ -293,7 +306,7 @@ router.get('/simulator/status', (req, res) => {
 /**
  * Procesar medición para sesión de sit-to-stand
  */
-async function processSitToStandMeasurement(foot, weight, activeSitToStand, res) {
+async function processSitToStandMeasurement(foot, weight, batteryLevel, activeSitToStand, res) {
   try {
     const now = Date.now()
     const startTime = new Date(activeSitToStand.startTime).getTime()
@@ -303,8 +316,9 @@ async function processSitToStandMeasurement(foot, weight, activeSitToStand, res)
     const cacheKey = `sit_to_stand_${activeSitToStand.id}`
     let pendingMeasurement = recentMeasurements.get(cacheKey) || {}
 
-    // Actualizar peso del pie correspondiente
+    // Actualizar peso y batería del pie correspondiente
     pendingMeasurement[`weight_${foot}`] = weight
+    pendingMeasurement[`battery_${foot}`] = batteryLevel
     pendingMeasurement.timestamp = now
     pendingMeasurement.elapsedSeconds = elapsedSeconds
 
@@ -321,7 +335,9 @@ async function processSitToStandMeasurement(foot, weight, activeSitToStand, res)
         activeSitToStand.id,
         pendingMeasurement.weight_left || null,
         pendingMeasurement.weight_right || null,
-        elapsedSeconds
+        elapsedSeconds,
+        pendingMeasurement.battery_left || null,
+        pendingMeasurement.battery_right || null
       )
 
       // Emitir evento de medición sit-to-stand

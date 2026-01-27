@@ -67,7 +67,7 @@ export async function getActiveSitToStandSession() {
 /**
  * Añadir medición a sesión de sit-to-stand
  */
-export async function addMeasurement(sitToStandSessionId, weightLeft, weightRight, elapsedSeconds) {
+export async function addMeasurement(sitToStandSessionId, weightLeft, weightRight, elapsedSeconds, batteryLevelLeft = null, batteryLevelRight = null) {
   try {
     const measurement = await prisma.sitToStandMeasurement.create({
       data: {
@@ -75,6 +75,8 @@ export async function addMeasurement(sitToStandSessionId, weightLeft, weightRigh
         timestamp: new Date(),
         weightLeft: weightLeft,
         weightRight: weightRight,
+        batteryLevelLeft: batteryLevelLeft !== null ? parseFloat(batteryLevelLeft) : null,
+        batteryLevelRight: batteryLevelRight !== null ? parseFloat(batteryLevelRight) : null,
         elapsedSeconds: elapsedSeconds
       }
     })

@@ -129,11 +129,12 @@ class MeasurementService {
    * Crear medición directa desde hardware (sin emparejamiento automático)
    * Se usa para sensores de hardware que envían mediciones independientes
    */
-  async createFromHardware(sessionId, foot, weight) {
+  async createFromHardware(sessionId, foot, weight, batteryLevel = null) {
     const measurementData = {
       sessionId: parseInt(sessionId),
       foot,
       weight: parseFloat(weight),
+      batteryLevel: batteryLevel !== null ? parseFloat(batteryLevel) : null,
       duration: 0, // Hardware no proporciona duración
       timestamp: new Date()
     }

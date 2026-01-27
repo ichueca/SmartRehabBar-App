@@ -6,6 +6,7 @@ import { format } from 'date-fns'
 import es from 'date-fns/locale/es'
 import HardwareSessionStarter from '../components/HardwareSessionStarter'
 import SitToStandStarter from '../components/SitToStandStarter'
+import BatteryIndicator from '../components/BatteryIndicator'
 import { getBalanceLevel } from '../utils/balanceUtils'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
@@ -490,16 +491,27 @@ const Dashboard = () => {
                     : 'bg-gray-50 border-gray-200'
                 }`}>
                   <div className="flex justify-between items-center">
-                    <div>
-                      <span className="font-medium">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium">
+                          {measurement.paired ? (
+                            <>
+                              {balanceInfo?.icon} Emparejada
+                            </>
+                          ) : (
+                            `👟 ${measurement.foot === 'left' ? 'Izquierda' : 'Derecha'}`
+                          )}
+                        </span>
+                        {/* Indicadores de batería */}
                         {measurement.paired ? (
-                          <>
-                            {balanceInfo?.icon} Emparejada
-                          </>
+                          <div className="flex space-x-1">
+                            <BatteryIndicator level={measurement.left?.batteryLevel} foot="left" />
+                            <BatteryIndicator level={measurement.right?.batteryLevel} foot="right" />
+                          </div>
                         ) : (
-                          `👟 ${measurement.foot === 'left' ? 'Izquierda' : 'Derecha'}`
+                          <BatteryIndicator level={measurement.measurement?.batteryLevel} foot={measurement.foot} />
                         )}
-                      </span>
+                      </div>
                       {measurement.paired && (
                         <span className="ml-3 text-sm text-gray-600">
                           Izq: {measurement.left.weight}kg | Der: {measurement.right.weight}kg
