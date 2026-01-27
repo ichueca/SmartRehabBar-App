@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
-import { sessionsAPI } from '../services/api'
+import { sessionsAPI, measurementsAPI } from '../services/api'
 
 const SocketContext = createContext(null)
 
@@ -30,9 +30,24 @@ export const SocketProvider = ({ children }) => {
     }
   }
 
+  // Función para cargar últimos niveles de batería
+  const loadLatestBattery = async () => {
+    try {
+      const batteryData = await measurementsAPI.getLatestBattery()
+      setBatteryLevels({
+        left: batteryData.left,
+        right: batteryData.right
+      })
+      console.log('🔋 Niveles de batería cargados:', batteryData)
+    } catch (error) {
+      console.error('Error loading battery levels:', error)
+    }
+  }
+
   useEffect(() => {
-    // Cargar sesiones activas al inicializar
+    // Cargar sesiones activas y niveles de batería al inicializar
     loadActiveSessions()
+    loadLatestBattery()
 
     // Conectar a Socket.IO
     // En producción, conectar al mismo servidor. En desarrollo, a localhost:5000

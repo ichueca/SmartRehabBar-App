@@ -12,7 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 const Dashboard = () => {
   const navigate = useNavigate()
-  const { connected, measurements } = useSocket()
+  const { connected, measurements, batteryLevels } = useSocket()
   const [stats, setStats] = useState({
     totalPatients: 0,
     activeSessions: 0,
@@ -393,7 +393,11 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${
+        (batteryLevels.left !== null || batteryLevels.right !== null)
+          ? 'lg:grid-cols-5'
+          : 'lg:grid-cols-4'
+      }`}>
         <StatCard
           title="Total Pacientes"
           value={stats.totalPatients}
@@ -418,6 +422,22 @@ const Dashboard = () => {
           icon="📊"
           color="text-orange-600"
         />
+
+        {/* Tarjeta de Batería - solo si hay datos */}
+        {(batteryLevels.left !== null || batteryLevels.right !== null) && (
+          <div className="card">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Estado Sensores</p>
+                <div className="flex space-x-2 mt-2">
+                  <BatteryIndicator level={batteryLevels.left} foot="left" />
+                  <BatteryIndicator level={batteryLevels.right} foot="right" />
+                </div>
+              </div>
+              <div className="text-4xl">🔋</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Recent Sessions */}

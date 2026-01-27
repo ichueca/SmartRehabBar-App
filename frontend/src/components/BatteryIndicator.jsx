@@ -46,7 +46,7 @@ const BatteryIndicator = ({ level, foot }) => {
   const footLabel = foot === 'left' ? 'Izq' : 'Der'
 
   return (
-    <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${status.bgColor} ${status.color}`}>
+    <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium ${status.bgColor} ${status.color}`}>
       <span>{status.icon}</span>
       <span>{footLabel}: {level.toFixed(0)}%</span>
     </div>

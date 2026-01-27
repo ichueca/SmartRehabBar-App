@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSocket } from '../context/SocketContext'
 import { patientsAPI } from '../services/api'
+import BatteryIndicator from './BatteryIndicator'
 
 const SitToStandStarter = ({ onSitToStandStarted }) => {
   const [isStarting, setIsStarting] = useState(false)
@@ -15,7 +16,11 @@ const SitToStandStarter = ({ onSitToStandStarted }) => {
   const [patients, setPatients] = useState([])
   const [loadingPatients, setLoadingPatients] = useState(false)
   const navigate = useNavigate()
-  const { socket } = useSocket()
+  const { socket, batteryLevels } = useSocket()
+
+  // Verificar si hay batería baja
+  const hasLowBattery = (batteryLevels.left !== null && batteryLevels.left < 20) ||
+                        (batteryLevels.right !== null && batteryLevels.right < 20)
 
   // Cerrar selector al hacer clic fuera
   useEffect(() => {
@@ -99,64 +104,72 @@ const SitToStandStarter = ({ onSitToStandStarted }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="text-center">
-        <div className="mb-4">
-          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    <div className="relative">
+      {/* Botón principal */}
+      <button
+        onClick={handleOpenSelector}
+        disabled={isStarting}
+        className={`btn-primary ${isStarting ? 'opacity-50 cursor-not-allowed' : ''}`}
+      >
+        {isStarting ? (
+          <span className="flex items-center space-x-2">
+            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Medición Levantarse
-          </h3>
-          <p className="text-gray-600 text-sm mb-4">
-            Mide la fuerza y equilibrio del paciente al levantarse desde sentado hasta de pie
-          </p>
-        </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
+            <span>Iniciando...</span>
+          </span>
+        ) : (
+          '🪑 Iniciar Medición Levantarse'
         )}
+      </button>
 
-        <div className="space-y-3">
-          <div className="text-left bg-blue-50 p-3 rounded text-sm">
-            <h4 className="font-medium text-blue-900 mb-2">📋 Instrucciones:</h4>
-            <ol className="list-decimal list-inside space-y-1 text-blue-800">
-              <li>Paciente sentado entre las plataformas</li>
-              <li>Pulsar "Iniciar Medición"</li>
-              <li>Indicar al paciente que se levante</li>
-              <li>Pulsar "Finalizar" cuando esté completamente de pie</li>
-            </ol>
-          </div>
+      {error && (
+        <div className="absolute top-full mt-2 left-0 right-0 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+          {error}
+        </div>
+      )}
 
-          <div className="relative">
-            <button
-              onClick={handleOpenSelector}
-              disabled={isStarting}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                isStarting
-                  ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                  : 'bg-green-600 hover:bg-green-700 text-white'
-              }`}
-            >
-              {isStarting ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Iniciando...
-                </div>
-              ) : (
-                '🪑 Iniciar Medición Levantarse'
-              )}
-            </button>
+      <div className="relative">
 
             {/* Selector de pacientes */}
             {showPatientSelector && (
-              <div className="patient-selector absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 min-w-[350px] max-h-[400px] overflow-y-auto">
-                <h4 className="font-bold text-gray-900 mb-3">Selecciona el paciente:</h4>
+              <div className="patient-selector absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 min-w-[400px] max-h-[600px] overflow-y-auto">
+                <h4 className="font-bold text-gray-900 mb-3">Medición Levantarse</h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  Mide la fuerza y equilibrio del paciente al levantarse desde sentado hasta de pie
+                </p>
+
+                {/* Instrucciones */}
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <h5 className="text-xs font-semibold text-blue-900 mb-2">📋 Instrucciones:</h5>
+                  <ol className="list-decimal list-inside space-y-1 text-xs text-blue-800">
+                    <li>Paciente sentado entre las plataformas</li>
+                    <li>Pulsar "Iniciar Medición"</li>
+                    <li>Indicar al paciente que se levante</li>
+                    <li>Pulsar "Finalizar" cuando esté completamente de pie</li>
+                  </ol>
+                </div>
+
+                {/* Indicadores de batería */}
+                {(batteryLevels.left !== null || batteryLevels.right !== null) && (
+                  <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <p className="text-xs font-medium text-gray-600 mb-2">Estado de Sensores:</p>
+                    <div className="flex space-x-2">
+                      <BatteryIndicator level={batteryLevels.left} foot="left" />
+                      <BatteryIndicator level={batteryLevels.right} foot="right" />
+                    </div>
+                    {hasLowBattery && (
+                      <div className="mt-2 flex items-center space-x-2 text-orange-600">
+                        <span className="text-sm">⚠️</span>
+                        <p className="text-xs font-medium">Batería baja detectada</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <h5 className="font-semibold text-gray-900 mb-2 text-sm">Selecciona el paciente:</h5>
+
                 {loadingPatients ? (
                   <div className="text-center py-4 text-gray-600">Cargando pacientes...</div>
                 ) : patients.length === 0 ? (
@@ -193,12 +206,6 @@ const SitToStandStarter = ({ onSitToStandStarted }) => {
                 </button>
               </div>
             )}
-          </div>
-        </div>
-
-        <div className="mt-4 text-xs text-gray-500">
-          <p>💡 Asegúrate de que hay una sesión activa antes de iniciar</p>
-        </div>
       </div>
     </div>
   )

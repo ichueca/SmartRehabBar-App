@@ -106,9 +106,14 @@ export const measurementsAPI = {
     })
     return handleResponse(response)
   },
-  
+
   getBySession: async (sessionId) => {
     const response = await fetch(`${API_BASE_URL}/measurements/session/${sessionId}`)
+    return handleResponse(response)
+  },
+
+  getLatestBattery: async () => {
+    const response = await fetch(`${API_BASE_URL}/measurements/latest-battery`)
     return handleResponse(response)
   }
 }

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { patientsAPI, sessionsAPI } from '../services/api'
+import { useSocket } from '../context/SocketContext'
+import BatteryIndicator from './BatteryIndicator'
 
 // Patrón por defecto para el simulador (no visible al usuario)
 const DEFAULT_PATTERN = {
@@ -7,6 +9,7 @@ const DEFAULT_PATTERN = {
 }
 
 const HardwareSessionStarter = ({ onSessionStarted }) => {
+  const { batteryLevels } = useSocket()
   const [isStarting, setIsStarting] = useState(false)
   const [selectedPatient, setSelectedPatient] = useState(null)
   const [showPatientSelector, setShowPatientSelector] = useState(false)
@@ -16,6 +19,10 @@ const HardwareSessionStarter = ({ onSessionStarted }) => {
   const [activeSessionToClose, setActiveSessionToClose] = useState(null)
   const [activePatientName, setActivePatientName] = useState('')
   const [pendingSession, setPendingSession] = useState(null)
+
+  // Verificar si hay batería baja
+  const hasLowBattery = (batteryLevels.left !== null && batteryLevels.left < 20) ||
+                        (batteryLevels.right !== null && batteryLevels.right < 20)
 
   // Cargar pacientes cuando se abre el selector
   useEffect(() => {
@@ -197,8 +204,26 @@ const HardwareSessionStarter = ({ onSessionStarted }) => {
 
       {/* Selector de paciente */}
       {showPatientSelector && !isStarting && (
-        <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 min-w-[350px] max-h-[400px] overflow-y-auto">
+        <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 min-w-[350px] max-h-[500px] overflow-y-auto">
           <h4 className="font-bold text-gray-900 mb-3">Selecciona el paciente:</h4>
+
+          {/* Indicadores de batería */}
+          {(batteryLevels.left !== null || batteryLevels.right !== null) && (
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-xs font-medium text-gray-600 mb-2">Estado de Sensores:</p>
+              <div className="flex space-x-2">
+                <BatteryIndicator level={batteryLevels.left} foot="left" />
+                <BatteryIndicator level={batteryLevels.right} foot="right" />
+              </div>
+              {hasLowBattery && (
+                <div className="mt-2 flex items-center space-x-2 text-orange-600">
+                  <span className="text-sm">⚠️</span>
+                  <p className="text-xs font-medium">Batería baja detectada</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {loadingPatients ? (
             <div className="text-center py-4 text-gray-600">Cargando pacientes...</div>
           ) : patients.length === 0 ? (
