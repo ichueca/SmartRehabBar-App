@@ -381,6 +381,9 @@ const Dashboard = () => {
           <p className="text-gray-600 mt-1">Vista general del sistema</p>
         </div>
         <div className="flex items-center space-x-4">
+          <button onClick={() => navigate('/bipedestation')} className="btn-secondary">
+            ⚖️ Bipedestación
+          </button>
           <HardwareSessionStarter onSessionStarted={handleSessionStarted} />
           <SitToStandStarter onSitToStandStarted={handleSitToStandStarted} />
           <div className="flex items-center space-x-2">

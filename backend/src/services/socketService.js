@@ -104,6 +104,45 @@ class SocketService {
       symmetryPercentage: sitToStandSession.symmetryPercentage
     })
   }
+
+  emitBipedestationStarted(status) {
+    if (!this.io) {
+      console.error('Socket.IO no está inicializado')
+      return
+    }
+
+    this.io.emit('bipedestation:started', status)
+    console.log(' Emitido: bipedestation:started', {
+      active: status.active,
+      exerciseId: status.exercise?.id
+    })
+  }
+
+  emitBipedestationUpdate(update) {
+    if (!this.io) {
+      console.error('Socket.IO no está inicializado')
+      return
+    }
+
+    this.io.emit('bipedestation:update', update)
+    console.log(' Emitido: bipedestation:update', {
+      exerciseId: update.exerciseId,
+      status: update.status,
+      recommendation: update.recommendation
+    })
+  }
+
+  emitBipedestationEnded(status) {
+    if (!this.io) {
+      console.error('Socket.IO no está inicializado')
+      return
+    }
+
+    this.io.emit('bipedestation:ended', status)
+    console.log(' Emitido: bipedestation:ended', {
+      exerciseId: status.exercise?.id
+    })
+  }
 }
 
 export default new SocketService()

@@ -5,7 +5,7 @@
 **Desarrollo Local:**
 
 ```
-http://localhost:3000
+http://localhost:5000
 ```
 
 **Heroku (Producción):**
@@ -279,7 +279,7 @@ Content-Type: application/json
 #### 3.3 Obtener Mediciones de una Sesión
 
 ```http
-GET /api/sessions/:id/measurements
+GET /api/measurements/sessions/:id/measurements
 ```
 
 **Query Parameters (opcionales):**
@@ -291,7 +291,7 @@ GET /api/sessions/:id/measurements
 **Ejemplo:**
 
 ```http
-GET /api/sessions/1/measurements?limit=20&paired=true
+GET /api/measurements/sessions/1/measurements?limit=20&paired=true
 ```
 
 **Respuesta exitosa (200):**
@@ -327,6 +327,50 @@ GET /api/sessions/1/measurements?limit=20&paired=true
 
 ---
 
+### 4. Bipedestación
+
+#### 4.1 Iniciar ejercicio
+
+```http
+POST /api/bipedestation/start
+Content-Type: application/json
+```
+
+**Body:**
+
+```json
+{
+  "targetLeftPercentage": 50,
+  "mode": "adult",
+  "audioEnabled": true,
+  "thresholds": {
+    "ok": 3,
+    "warning": 7
+  }
+}
+```
+
+#### 4.2 Obtener estado
+
+```http
+GET /api/bipedestation/status
+```
+
+#### 4.3 Finalizar ejercicio
+
+```http
+POST /api/bipedestation/stop
+```
+
+**Notas:**
+
+- no crea sesión clínica
+- no guarda mediciones en base de datos
+- usa `/api/hardware/:foot` para recibir datos del hardware mientras está activo
+- emite actualizaciones live por Socket.IO
+
+---
+
 ## Eventos Socket.IO
 
 ### Conexión
@@ -336,7 +380,7 @@ GET /api/sessions/1/measurements?limit=20&paired=true
 ```javascript
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:3000');
+const socket = io('http://localhost:5000');
 
 socket.on('connect', () => {
   console.log('Conectado:', socket.id);
@@ -434,6 +478,35 @@ Emitido cuando se finaliza una sesión.
 }
 ```
 
+#### 4. `bipedestation:update`
+
+Emitido cuando el backend recalcula el reparto actual de carga durante el ejercicio de bipedestación.
+
+**Payload típico:**
+
+```json
+{
+  "exerciseId": 123456,
+  "status": "slight",
+  "recommendation": "more_left",
+  "message": "Pon un poco más de peso en el pie izquierdo",
+  "target": {
+    "leftPercentage": 50,
+    "rightPercentage": 50
+  },
+  "distribution": {
+    "leftPercentage": 46.5,
+    "rightPercentage": 53.5,
+    "differenceFromTarget": 3.5
+  },
+  "weights": {
+    "left": 19.5,
+    "right": 22.4,
+    "total": 41.9
+  }
+}
+```
+
 ---
 
 ## Códigos de Estado HTTP
@@ -503,17 +576,17 @@ Todos los errores siguen este formato:
 
 ```bash
 # 1. Crear paciente
-curl -X POST http://localhost:3000/api/patients \
+curl -X POST http://localhost:5000/api/patients \
   -H "Content-Type: application/json" \
   -d '{"name": "Juan Pérez"}'
 
 # 2. Iniciar sesión
-curl -X POST http://localhost:3000/api/sessions \
+curl -X POST http://localhost:5000/api/sessions \
   -H "Content-Type: application/json" \
   -d '{"patientId": 1}'
 
 # 3. Registrar medición pie izquierdo
-curl -X POST http://localhost:3000/api/measurements/left \
+curl -X POST http://localhost:5000/api/measurements/left \
   -H "Content-Type: application/json" \
   -d '{
     "sessionId": 1,
@@ -523,7 +596,7 @@ curl -X POST http://localhost:3000/api/measurements/left \
   }'
 
 # 4. Registrar medición pie derecho
-curl -X POST http://localhost:3000/api/measurements/right \
+curl -X POST http://localhost:5000/api/measurements/right \
   -H "Content-Type: application/json" \
   -d '{
     "sessionId": 1,
@@ -533,12 +606,12 @@ curl -X POST http://localhost:3000/api/measurements/right \
   }'
 
 # 5. Finalizar sesión
-curl -X PATCH http://localhost:3000/api/sessions/1 \
+curl -X PATCH http://localhost:5000/api/sessions/1 \
   -H "Content-Type: application/json" \
   -d '{"notes": "Sesión completada"}'
 
 # 6. Obtener mediciones
-curl http://localhost:3000/api/sessions/1/measurements
+curl http://localhost:5000/api/measurements/sessions/1/measurements
 ```
 
 ---

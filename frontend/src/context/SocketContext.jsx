@@ -88,6 +88,15 @@ export const SocketProvider = ({ children }) => {
       }
     })
 
+    socketInstance.on('bipedestation:update', (data) => {
+      if (data.batteryLevels) {
+        setBatteryLevels(prev => ({
+          left: data.batteryLevels.left ?? prev.left,
+          right: data.batteryLevels.right ?? prev.right
+        }))
+      }
+    })
+
     // Escuchar eventos de sesiones
     socketInstance.on('session:started', (session) => {
       console.log('🟢 Sesión iniciada:', session)

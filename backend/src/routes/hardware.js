@@ -3,6 +3,7 @@ import sessionService from '../services/sessionService.js'
 import measurementService from '../services/measurementService.js'
 import socketService from '../services/socketService.js'
 import * as sitToStandService from '../services/sitToStandService.js'
+import bipedestationService from '../services/bipedestationService.js'
 import { spawn } from 'child_process'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -65,6 +66,17 @@ router.get('/:foot', async (req, res) => {
 
     const now = Date.now()
 
+    // Verificar si hay sesión de sit-to-stand activa
+    const activeSitToStand = await sitToStandService.getActiveSitToStandSession()
+    if (activeSitToStand) {
+      // Procesar medición para sit-to-stand
+      return await processSitToStandMeasurement(foot, weight, batteryLevel, activeSitToStand, res)
+    }
+
+    if (bipedestationService.isActive()) {
+      return processBipedestationMeasurement(foot, weight, batteryLevel, res)
+    }
+
     // Verificar si hay sesión activa
     const activeSession = await sessionService.getAnyActiveSession()
     if (!activeSession) {
@@ -72,13 +84,6 @@ router.get('/:foot', async (req, res) => {
         status: 'no_active_session',
         message: 'No hay sesión activa para registrar mediciones'
       })
-    }
-
-    // Verificar si hay sesión de sit-to-stand activa
-    const activeSitToStand = await sitToStandService.getActiveSitToStandSession()
-    if (activeSitToStand) {
-      // Procesar medición para sit-to-stand
-      return await processSitToStandMeasurement(foot, weight, batteryLevel, activeSitToStand, res)
     }
     
     // Aplicar filtros para evitar saturación
@@ -373,6 +378,33 @@ async function processSitToStandMeasurement(foot, weight, batteryLevel, activeSi
     return res.status(500).json({
       error: 'internal_error',
       message: 'Error procesando medición de levantarse'
+    })
+  }
+}
+
+function processBipedestationMeasurement(foot, weight, batteryLevel, res) {
+  try {
+    const update = bipedestationService.processMeasurement(foot, weight, batteryLevel)
+
+    if (!update) {
+      return res.status(400).json({
+        error: 'no_active_bipedestation',
+        message: 'No hay un ejercicio de bipedestación activo'
+      })
+    }
+
+    socketService.emitBipedestationUpdate(update)
+
+    return res.json({
+      status: 'bipedestation_measurement',
+      message: 'Medición de bipedestación procesada',
+      update
+    })
+  } catch (error) {
+    console.error('Error processing bipedestation measurement:', error)
+    return res.status(500).json({
+      error: 'internal_error',
+      message: 'Error procesando medición de bipedestación'
     })
   }
 }

@@ -1,5 +1,7 @@
 # Arquitectura del Sistema SmartRehabBar
 
+> **Nota de revisión (estado actual):** para instalaciones locales y despliegues en equipos del centro, la configuración actual recomendada usa **SQLite** como base de datos local y permite servir el frontend compilado desde el backend. Algunos apartados del documento mantienen referencias históricas al MVP inicial desplegado en Heroku.
+
 ## 1. Visión General
 
 SmartRehabBar es un sistema de rehabilitación que monitoriza la distribución del peso corporal entre ambos pies durante la marcha, diseñado para ayudar a pacientes en recuperación post-accidente a corregir desequilibrios.
@@ -370,7 +372,7 @@ Usuario en Frontend
 // prisma/schema.prisma
 
 datasource db {
-  provider = "postgresql"  // Cambiar a "sqlite" para Raspberry Pi
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 

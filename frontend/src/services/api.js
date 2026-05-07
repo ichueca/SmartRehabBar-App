@@ -108,12 +108,35 @@ export const measurementsAPI = {
   },
 
   getBySession: async (sessionId) => {
-    const response = await fetch(`${API_BASE_URL}/measurements/session/${sessionId}`)
+    const response = await fetch(`${API_BASE_URL}/measurements/sessions/${sessionId}/measurements`)
     return handleResponse(response)
   },
 
   getLatestBattery: async () => {
     const response = await fetch(`${API_BASE_URL}/measurements/latest-battery`)
+    return handleResponse(response)
+  }
+}
+
+export const bipedestationAPI = {
+  start: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/bipedestation/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    return handleResponse(response)
+  },
+
+  stop: async () => {
+    const response = await fetch(`${API_BASE_URL}/bipedestation/stop`, {
+      method: 'POST'
+    })
+    return handleResponse(response)
+  },
+
+  getStatus: async () => {
+    const response = await fetch(`${API_BASE_URL}/bipedestation/status`)
     return handleResponse(response)
   }
 }

@@ -11,7 +11,7 @@ SmartRehabBar es una aplicación web completa que permite monitorear en tiempo r
 ### Backend (Node.js + Express)
 
 - ✅ API REST completa para gestión de pacientes, sesiones y mediciones
-- ✅ Base de datos PostgreSQL con Prisma ORM
+- ✅ Base de datos SQLite local con Prisma ORM
 - ✅ Socket.IO para comunicación en tiempo real
 - ✅ Sincronización automática de mediciones izquierda/derecha
 - ✅ Cálculo de balance y estadísticas en tiempo real
@@ -23,17 +23,40 @@ SmartRehabBar es una aplicación web completa que permite monitorear en tiempo r
 - ✅ Gestión completa de pacientes
 - ✅ Historial de sesiones con gráficos
 - ✅ Monitoreo en vivo de sesiones activas
+- ✅ Ejercicio independiente de bipedestación en tiempo real
 - ✅ Visualización de balance con gráficos interactivos (Recharts)
 - ✅ Interfaz responsive con Tailwind CSS
 - ✅ Actualización automática vía Socket.IO
 
 ## 🚀 Instalación
 
+> El repositorio incluye **todo el código fuente** del proyecto: `frontend`, `backend` y documentación técnica.  
+> Para instalación local detallada, consulta `docs/INSTALACION_LOCAL.md`.
+
+Documentación operativa local adicional:
+
+- `docs/USO_LOCAL.md`
+- `docs/COPIAS_SEGURIDAD.md`
+- `docs/ACTUALIZACION_LOCAL.md`
+
 ### Requisitos Previos
 
-- Node.js 20.10.0 o superior
-- PostgreSQL 14 o superior
+- Node.js 18 LTS o superior (recomendado 20 LTS)
 - npm o yarn
+
+### Arranque rápido en Windows
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\install-local.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\start-local.ps1
+```
+
+Esto deja la aplicación disponible en `http://localhost:5000` usando SQLite local.
+
+También se puede hacer doble clic en:
+
+- `Instalar SmartRehabBar.bat`
+- `Iniciar SmartRehabBar.bat`
 
 ### 1. Clonar el repositorio
 
@@ -52,7 +75,7 @@ npm install
 Crear archivo `.env`:
 
 ```env
-DATABASE_URL="postgresql://usuario:contraseña@localhost:5432/smartrehabbar"
+DATABASE_URL="file:./data/smartrehabbar.db"
 PORT=5000
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:3000
@@ -71,6 +94,15 @@ npx prisma generate
 cd ../frontend
 npm install
 ```
+
+### Instalación local recomendada
+
+Para uso en portátil o equipo de escritorio hay dos modos:
+
+- **Modo desarrollo**: backend y frontend por separado (`npm run dev` en ambos)
+- **Modo despliegue local**: compilar frontend con `npm run build` y arrancar backend en producción para servir toda la aplicación desde `http://localhost:5000`
+
+La guía completa paso a paso está en `docs/INSTALACION_LOCAL.md`.
 
 ## 🎮 Uso
 
@@ -121,6 +153,14 @@ La aplicación estará disponible en `http://localhost:3000`
 - Gráfico de últimas 20 pisadas
 - Finalizar sesión con notas
 
+### 5. Bipedestación
+
+- Ejercicio independiente sin paciente ni persistencia
+- Reparto objetivo configurable entre ambos pies
+- Modo adulto e infantil
+- Feedback visual inmediato con porcentajes y corrección
+- Audio opcional para auriculares
+
 ## 🔌 API Endpoints
 
 ### Pacientes
@@ -142,7 +182,13 @@ La aplicación estará disponible en `http://localhost:3000`
 
 - `POST /api/measurements/left` - Registrar medición izquierda
 - `POST /api/measurements/right` - Registrar medición derecha
-- `GET /api/measurements/session/:sessionId` - Obtener mediciones de una sesión
+- `GET /api/measurements/sessions/:id/measurements` - Obtener mediciones de una sesión
+
+### Bipedestación
+
+- `POST /api/bipedestation/start` - Iniciar ejercicio de bipedestación
+- `GET /api/bipedestation/status` - Obtener estado actual del ejercicio
+- `POST /api/bipedestation/stop` - Finalizar ejercicio de bipedestación
 
 ## 📡 Eventos Socket.IO
 
@@ -151,6 +197,9 @@ La aplicación estará disponible en `http://localhost:3000`
 - `measurement:new` - Nueva medición registrada
 - `session:started` - Sesión iniciada
 - `session:ended` - Sesión finalizada
+- `bipedestation:started` - Ejercicio de bipedestación iniciado
+- `bipedestation:update` - Actualización live de equilibrio
+- `bipedestation:ended` - Ejercicio de bipedestación finalizado
 
 ### Conexión
 
@@ -234,9 +283,9 @@ SmartRehabBar/
 
 - **Node.js** - Runtime de JavaScript
 - **Express** - Framework web
-- **Prisma** - ORM para PostgreSQL
+- **Prisma** - ORM para SQLite / PostgreSQL
 - **Socket.IO** - Comunicación en tiempo real
-- **PostgreSQL** - Base de datos
+- **SQLite** - Base de datos local por archivo
 
 ### Frontend
 

@@ -9,6 +9,7 @@ import sessionsRouter from './routes/sessions.js'
 import measurementsRouter from './routes/measurements.js'
 import hardwareRouter from './routes/hardware.js'
 import sitToStandRouter from './routes/sitToStand.js'
+import bipedestationRouter from './routes/bipedestation.js'
 import { errorHandler, notFound } from './middleware/errorHandler.js'
 import socketService from './services/socketService.js'
 
@@ -50,6 +51,7 @@ app.use('/api/sessions', sessionsRouter)
 app.use('/api/measurements', measurementsRouter)
 app.use('/api/hardware', hardwareRouter)
 app.use('/api/sit-to-stand', sitToStandRouter)
+app.use('/api/bipedestation', bipedestationRouter)
 
 // API info endpoint
 app.get('/api', (req, res) => {
@@ -62,14 +64,15 @@ app.get('/api', (req, res) => {
       sessions: '/api/sessions',
       measurements: '/api/measurements',
       hardware: '/api/hardware',
-      sitToStand: '/api/sit-to-stand'
+      sitToStand: '/api/sit-to-stand',
+      bipedestation: '/api/bipedestation'
     }
   })
 })
 
 // Servir frontend en producción
 if (process.env.NODE_ENV === 'production') {
-  const publicPath = join(__dirname, '..', 'public')
+  const publicPath = join(__dirname, '..', '..', 'frontend', 'dist')
   app.use(express.static(publicPath))
 
   // Todas las rutas no-API sirven el frontend

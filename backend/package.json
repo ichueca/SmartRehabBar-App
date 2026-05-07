@@ -12,6 +12,7 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "node prisma/seed.js",
     "simulate": "node src/scripts/simulate-hardware.js",
+    "simulate:bipedestation": "node src/scripts/simulate-bipedestation-demo.js",
     "simulate:normal": "node src/scripts/simulate-hardware.js --pattern normal",
     "simulate:unbalanced": "node src/scripts/simulate-hardware.js --pattern unbalanced",
     "simulate:limping": "node src/scripts/simulate-hardware.js --pattern limping",
