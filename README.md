@@ -38,6 +38,7 @@ Documentación operativa local adicional:
 - `docs/USO_LOCAL.md`
 - `docs/COPIAS_SEGURIDAD.md`
 - `docs/ACTUALIZACION_LOCAL.md`
+- `docs/INSTALACION_RASPBERRY_PI.md`
 
 ### Requisitos Previos
 

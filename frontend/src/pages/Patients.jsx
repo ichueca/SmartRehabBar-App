@@ -4,6 +4,18 @@ import { patientsAPI } from '../services/api'
 import { format } from 'date-fns'
 import es from 'date-fns/locale/es'
 
+const PatientsIcon = ({ type, className = 'w-5 h-5' }) => {
+  const commonProps = { className, fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', viewBox: '0 0 24 24' }
+
+  const icons = {
+    add: <svg {...commonProps}><path d="M12 5v14" /><path d="M5 12h14" /></svg>,
+    patient: <svg {...commonProps}><circle cx="12" cy="8" r="4" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>,
+    delete: <svg {...commonProps}><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /></svg>
+  }
+
+  return icons[type] || null
+}
+
 const Patients = () => {
   const [patients, setPatients] = useState([])
   const [loading, setLoading] = useState(true)
@@ -77,7 +89,7 @@ const Patients = () => {
           onClick={() => setShowModal(true)}
           className="btn-primary"
         >
-          ➕ Nuevo Paciente
+          <span className="inline-flex items-center space-x-2"><PatientsIcon type="add" /><span>Nuevo Paciente</span></span>
         </button>
       </div>
 
@@ -99,7 +111,7 @@ const Patients = () => {
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">👤</span>
+                    <PatientsIcon type="patient" className="w-6 h-6 text-primary-700" />
                   </div>
                   <div>
                     <h3 className="font-bold text-lg text-gray-900">{patient.name}</h3>
@@ -135,8 +147,9 @@ const Patients = () => {
                 <button
                   onClick={() => handleDelete(patient.id)}
                   className="btn-danger text-sm"
+                  title="Eliminar paciente"
                 >
-                  🗑️
+                  <PatientsIcon type="delete" className="w-4 h-4" />
                 </button>
               </div>
             </div>

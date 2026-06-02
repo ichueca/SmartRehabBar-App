@@ -5,6 +5,19 @@ import { format } from 'date-fns'
 import es from 'date-fns/locale/es'
 import { getBalanceLevel } from '../utils/balanceUtils'
 
+const SessionsIcon = ({ type, className = 'w-5 h-5' }) => {
+  const commonProps = { className, fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', viewBox: '0 0 24 24' }
+
+  const icons = {
+    steps: <svg {...commonProps}><path d="M9 6c1.2 0 2 1.2 2 2.6 0 1.7-1 3.4-2.1 4.9-.7 1-1.2 2.3-1.2 3.5V20H5.5v-2.4c0-1.5.6-3 1.5-4.2.9-1.2 1.8-2.8 1.8-4.5C8.8 7.5 8.9 6 9 6Zm6 0c1.2 0 2 1.2 2 2.6 0 1.7-1 3.4-2.1 4.9-.7 1-1.2 2.3-1.2 3.5V20h-2.2v-2.4c0-1.5.6-3 1.5-4.2.9-1.2 1.8-2.8 1.8-4.5 0-1.4.1-2.9.2-2.9Z" fill="currentColor" stroke="none" /></svg>,
+    stand: <svg {...commonProps}><circle cx="12" cy="5" r="2" /><path d="M12 7v6" /><path d="M12 10l-4 3" /><path d="M12 10l4 3" /><path d="M12 13l-3 6" /><path d="M12 13l3 6" /></svg>,
+    session: <svg {...commonProps}><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 7h8M8 11h8M8 15h5" /></svg>,
+    delete: <svg {...commonProps}><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /></svg>
+  }
+
+  return icons[type] || null
+}
+
 const Sessions = () => {
   const [sessions, setSessions] = useState([])
   const [filter, setFilter] = useState('all') // all, active, completed
@@ -121,7 +134,7 @@ const Sessions = () => {
             // Determinar tipo de sesión
             const hasSitToStand = session.sitToStandSessions && session.sitToStandSessions.length > 0
             const hasSteps = session.measurements && session.measurements.length > 0
-            const sessionType = hasSitToStand ? '🪑 Levantarse' : '🚶 Pisadas'
+            const sessionType = hasSitToStand ? 'Levantarse' : 'Pisadas'
             const sessionTypeColor = hasSitToStand ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
 
             return (
@@ -141,7 +154,7 @@ const Sessions = () => {
                         Sesión #{session.id}
                       </h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${sessionTypeColor}`}>
-                        {sessionType}
+                        <span className="inline-flex items-center space-x-1"><SessionsIcon type={hasSitToStand ? 'stand' : 'steps'} className="w-3.5 h-3.5" /><span>{sessionType}</span></span>
                       </span>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                         session.endTime
@@ -152,7 +165,7 @@ const Sessions = () => {
                       </span>
                       {balanceInfo && (
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${balanceInfo.bgClass} ${balanceInfo.textClass}`}>
-                          {balanceInfo.icon} {balanceInfo.label}
+                          <span className="inline-flex items-center space-x-1"><span className={`inline-block h-2.5 w-2.5 rounded-full ${balanceInfo.color === 'green' ? 'bg-green-500' : balanceInfo.color === 'yellow' ? 'bg-yellow-500' : 'bg-red-500'}`}></span><span>{balanceInfo.label}</span></span>
                         </span>
                       )}
                     </div>
@@ -186,8 +199,16 @@ const Sessions = () => {
                   </div>
 
                   <div className="flex items-center space-x-3 ml-4">
-                    <div className="text-2xl">
-                      {session.endTime ? (balanceInfo ? balanceInfo.icon : '📋') : '🟢'}
+                    <div className="text-gray-500">
+                      {session.endTime ? (
+                        balanceInfo ? (
+                          <span className={`inline-block h-3.5 w-3.5 rounded-full ${balanceInfo.color === 'green' ? 'bg-green-500' : balanceInfo.color === 'yellow' ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
+                        ) : (
+                          <SessionsIcon type="session" className="w-5 h-5" />
+                        )
+                      ) : (
+                        <span className="inline-block h-3.5 w-3.5 rounded-full bg-green-500"></span>
+                      )}
                     </div>
                     {/* Botón de eliminar */}
                     <button
@@ -195,7 +216,7 @@ const Sessions = () => {
                       className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
                       title="Eliminar sesión"
                     >
-                      🗑️
+                      <SessionsIcon type="delete" className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

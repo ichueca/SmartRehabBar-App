@@ -120,7 +120,7 @@ const SitToStandStarter = ({ onSitToStandStarted }) => {
             <span>Iniciando...</span>
           </span>
         ) : (
-          '🪑 Iniciar Medición Levantarse'
+          'Iniciar Medición Levantarse'
         )}
       </button>
 

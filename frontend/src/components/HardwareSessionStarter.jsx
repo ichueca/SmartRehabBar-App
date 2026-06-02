@@ -198,7 +198,7 @@ const HardwareSessionStarter = ({ onSessionStarted }) => {
             <span>Iniciando...</span>
           </span>
         ) : (
-          '🚶 Iniciar Medición Pisadas'
+          'Iniciar Medición Pisadas'
         )}
       </button>
 

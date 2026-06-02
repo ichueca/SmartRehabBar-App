@@ -1,6 +1,19 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useSocket } from '../context/SocketContext'
 
+const LayoutIcon = ({ type, className = 'w-5 h-5' }) => {
+  const commonProps = { className, fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', viewBox: '0 0 24 24' }
+
+  const icons = {
+    brand: <svg {...commonProps}><rect x="6" y="3" width="12" height="18" rx="2" /><path d="M9 7h6M9 11h6M9 15h4" /></svg>,
+    dashboard: <svg {...commonProps}><path d="M4 19V5" /><path d="M4 19h16" /><rect x="7" y="11" width="3" height="5" fill="currentColor" stroke="none" /><rect x="12" y="8" width="3" height="8" fill="currentColor" stroke="none" /><rect x="17" y="6" width="3" height="10" fill="currentColor" stroke="none" /></svg>,
+    patients: <svg {...commonProps}><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" /><circle cx="9.5" cy="7" r="3.5" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a3.5 3.5 0 0 1 0 6.74" /></svg>,
+    sessions: <svg {...commonProps}><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 7h8M8 11h8M8 15h5" /></svg>
+  }
+
+  return icons[type] || null
+}
+
 const Layout = () => {
   const location = useLocation()
   const { connected, activeSessions } = useSocket()
@@ -10,9 +23,9 @@ const Layout = () => {
   }
 
   const navLinks = [
-    { path: '/', label: 'Dashboard', icon: '📊' },
-    { path: '/patients', label: 'Pacientes', icon: '👥' },
-    { path: '/sessions', label: 'Sesiones', icon: '📋' },
+    { path: '/', label: 'Dashboard', icon: 'dashboard' },
+    { path: '/patients', label: 'Pacientes', icon: 'patients' },
+    { path: '/sessions', label: 'Sesiones', icon: 'sessions' },
   ]
   
   return (
@@ -22,7 +35,7 @@ const Layout = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <span className="text-3xl">🏥</span>
+              <div className="text-gray-900"><LayoutIcon type="brand" className="w-10 h-10" /></div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">SmartRehabBar</h1>
                 <p className="text-sm text-gray-500">Sistema de Rehabilitación Inteligente</p>
@@ -35,7 +48,7 @@ const Layout = () => {
               {activeSessions.length > 0 && (
                 <div className="flex items-center space-x-2">
                   <div className="relative">
-                    <span className="text-lg">🟢</span>
+                    <span className="block h-4 w-4 rounded-full bg-green-500"></span>
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                       {activeSessions.length}
                     </span>
@@ -95,7 +108,7 @@ const Layout = () => {
                   }
                 `}
               >
-                <span>{link.icon}</span>
+                <span><LayoutIcon type={link.icon} className="w-4 h-4" /></span>
                 <span>{link.label}</span>
               </Link>
             ))}

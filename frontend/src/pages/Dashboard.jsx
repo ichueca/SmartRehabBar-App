@@ -10,6 +10,27 @@ import BatteryIndicator from '../components/BatteryIndicator'
 import { getBalanceLevel } from '../utils/balanceUtils'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
+const DashboardIcon = ({ type, className = 'w-7 h-7' }) => {
+  const commonProps = {
+    className,
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: '1.8',
+    viewBox: '0 0 24 24'
+  }
+
+  const icons = {
+    patients: <svg {...commonProps}><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" /><circle cx="9.5" cy="7" r="3.5" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a3.5 3.5 0 0 1 0 6.74" /></svg>,
+    active: <svg {...commonProps}><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" /></svg>,
+    sessions: <svg {...commonProps}><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 7h8M8 11h8M8 15h5" /></svg>,
+    chart: <svg {...commonProps}><path d="M4 19V5" /><path d="M4 19h16" /><rect x="7" y="11" width="3" height="5" fill="currentColor" stroke="none" /><rect x="12" y="8" width="3" height="8" fill="currentColor" stroke="none" /><rect x="17" y="6" width="3" height="10" fill="currentColor" stroke="none" /></svg>,
+    balance: <svg {...commonProps}><path d="M12 4v4" /><path d="M6 8h12" /><path d="M8 8 5 14h6L8 8Z" /><path d="M16 8l-3 6h6l-3-6Z" /><path d="M12 8v10" /><path d="M8 20h8" /></svg>,
+    battery: <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M17 7h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1v1a1 1 0 0 1-1 1H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h12a1 1 0 0 1 1 1v1Zm-2 0H4v10h11V7Zm3 2v6h1V9h-1Z" /></svg>
+  }
+
+  return icons[type] || null
+}
+
 const Dashboard = () => {
   const navigate = useNavigate()
   const { connected, measurements, batteryLevels } = useSocket()
@@ -120,7 +141,7 @@ const Dashboard = () => {
           <p className="text-sm font-medium text-gray-600">{title}</p>
           <p className={`text-3xl font-bold ${color}`}>{value}</p>
         </div>
-        <div className="text-4xl">{icon}</div>
+        <div className={color}><DashboardIcon type={icon} className="w-9 h-9" /></div>
       </div>
     </div>
   )
@@ -382,7 +403,7 @@ const Dashboard = () => {
         </div>
         <div className="flex items-center space-x-4">
           <button onClick={() => navigate('/bipedestation')} className="btn-secondary">
-            ⚖️ Bipedestación
+            <span className="inline-flex items-center space-x-2"><DashboardIcon type="balance" className="w-5 h-5" /><span>Bipedestación</span></span>
           </button>
           <HardwareSessionStarter onSessionStarted={handleSessionStarted} />
           <SitToStandStarter onSitToStandStarted={handleSitToStandStarted} />
@@ -404,25 +425,25 @@ const Dashboard = () => {
         <StatCard
           title="Total Pacientes"
           value={stats.totalPatients}
-          icon="👥"
+          icon="patients"
           color="text-blue-600"
         />
         <StatCard
           title="Sesiones Activas"
           value={stats.activeSessions}
-          icon="🟢"
+          icon="active"
           color="text-green-600"
         />
         <StatCard
           title="Total Sesiones"
           value={stats.totalSessions}
-          icon="📋"
+          icon="sessions"
           color="text-purple-600"
         />
         <StatCard
           title="Mediciones Hoy"
           value={measurements.length}
-          icon="📊"
+          icon="chart"
           color="text-orange-600"
         />
 
@@ -437,7 +458,7 @@ const Dashboard = () => {
                   <BatteryIndicator level={batteryLevels.right} foot="right" />
                 </div>
               </div>
-              <div className="text-4xl">🔋</div>
+              <div className="text-gray-500"><DashboardIcon type="battery" className="w-10 h-10" /></div>
             </div>
           </div>
         )}

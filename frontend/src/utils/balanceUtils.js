@@ -8,7 +8,7 @@ export const getBalanceLevel = (difference) => {
     return {
       level: 'normal',
       color: 'green',
-      icon: '🟢',
+      icon: '●',
       bgClass: 'bg-green-50',
       borderClass: 'border-green-200',
       textClass: 'text-green-700'
@@ -17,7 +17,7 @@ export const getBalanceLevel = (difference) => {
     return {
       level: 'leve',
       color: 'yellow',
-      icon: '🟡',
+      icon: '●',
       bgClass: 'bg-yellow-50',
       borderClass: 'border-yellow-300',
       textClass: 'text-yellow-700'
@@ -26,7 +26,7 @@ export const getBalanceLevel = (difference) => {
     return {
       level: 'severa',
       color: 'red',
-      icon: '🔴',
+      icon: '●',
       bgClass: 'bg-red-50',
       borderClass: 'border-red-200',
       textClass: 'text-red-700'

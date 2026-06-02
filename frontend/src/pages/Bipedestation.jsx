@@ -10,6 +10,18 @@ import balanceLeftStrongImage from '../../images/balance_left_strong.webp'
 import balanceRightSoftImage from '../../images/balance_right_soft.webp'
 import balanceRightStrongImage from '../../images/balance_right_strong.webp'
 
+const BipedestationIcon = ({ type, className = 'w-5 h-5' }) => {
+  const commonProps = { className, fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', viewBox: '0 0 24 24' }
+
+  const icons = {
+    play: <svg {...commonProps}><path d="m8 6 10 6-10 6V6Z" fill="currentColor" stroke="none" /></svg>,
+    stop: <svg {...commonProps}><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none" /></svg>,
+    feet: <svg {...commonProps}><path d="M9 6c1.2 0 2 1.2 2 2.6 0 1.7-1 3.4-2.1 4.9-.7 1-1.2 2.3-1.2 3.5V20H5.5v-2.4c0-1.5.6-3 1.5-4.2.9-1.2 1.8-2.8 1.8-4.5C8.8 7.5 8.9 6 9 6Zm6 0c1.2 0 2 1.2 2 2.6 0 1.7-1 3.4-2.1 4.9-.7 1-1.2 2.3-1.2 3.5V20h-2.2v-2.4c0-1.5.6-3 1.5-4.2.9-1.2 1.8-2.8 1.8-4.5 0-1.4.1-2.9.2-2.9Z" fill="currentColor" stroke="none" /></svg>
+  }
+
+  return icons[type] || null
+}
+
 const TARGET_PRESETS = [50, 60, 70, 80, 100, 0]
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 
@@ -28,27 +40,64 @@ const getChildIllustration = (update) => {
     }
   }
 
+  // La pantalla está frente al niño: su derecha es la izquierda visual del dibujo.
   if (update.recommendation === 'more_left') {
     return update.status === 'large'
       ? {
-          src: balanceLeftStrongImage,
-          alt: 'Personaje inclinado con desequilibrio fuerte hacia la derecha y necesidad de cargar más el pie izquierdo'
+          src: balanceRightStrongImage,
+          alt: 'Personaje con desequilibrio fuerte y necesidad de cargar más el pie izquierdo'
         }
       : {
-          src: balanceLeftSoftImage,
+          src: balanceRightSoftImage,
           alt: 'Personaje con desequilibrio leve y necesidad de cargar un poco más el pie izquierdo'
         }
   }
 
   return update.status === 'large'
     ? {
-        src: balanceRightStrongImage,
-        alt: 'Personaje inclinado con desequilibrio fuerte hacia la izquierda y necesidad de cargar más el pie derecho'
+        src: balanceLeftStrongImage,
+        alt: 'Personaje con desequilibrio fuerte y necesidad de cargar más el pie derecho'
       }
     : {
-        src: balanceRightSoftImage,
+        src: balanceLeftSoftImage,
         alt: 'Personaje con desequilibrio leve y necesidad de cargar un poco más el pie derecho'
       }
+}
+
+const getAdultVisualData = (update) => {
+  if (!update?.distribution || !update?.target || !update?.weights) {
+    return null
+  }
+
+  return {
+    screenLeft: {
+      label: 'Pie derecho',
+      percentage: update.distribution.rightPercentage,
+      weight: update.weights.right,
+      bgClass: 'bg-green-50',
+      textClass: 'text-green-900',
+      labelClass: 'text-green-700'
+    },
+    screenRight: {
+      label: 'Pie izquierdo',
+      percentage: update.distribution.leftPercentage,
+      weight: update.weights.left,
+      bgClass: 'bg-blue-50',
+      textClass: 'text-blue-900',
+      labelClass: 'text-blue-700'
+    },
+    bar: {
+      leftWidth: update.distribution.rightPercentage,
+      rightWidth: update.distribution.leftPercentage,
+      targetMarkerLeft: update.target.rightPercentage,
+      actualMarkerLeft: update.distribution.rightPercentage
+    },
+    correctionLabel: update.recommendation === 'balanced'
+      ? '✅ OK'
+      : update.recommendation === 'more_left'
+        ? '➡ Izquierdo'
+        : '⬅ Derecho'
+  }
 }
 
 const Bipedestation = () => {
@@ -71,6 +120,7 @@ const Bipedestation = () => {
   const latestUpdate = status.latestUpdate
   const displayBattery = latestUpdate?.batteryLevels || batteryLevels
   const childIllustration = useMemo(() => getChildIllustration(latestUpdate), [latestUpdate])
+  const adultVisualData = useMemo(() => getAdultVisualData(latestUpdate), [latestUpdate])
 
   useEffect(() => {
     loadStatus()
@@ -262,7 +312,7 @@ const Bipedestation = () => {
             </div>
 
             <button onClick={startExercise} disabled={starting} className={`w-full py-5 text-xl btn-primary ${starting ? 'opacity-60 cursor-not-allowed' : ''}`}>
-              {starting ? 'Iniciando...' : '▶ Iniciar ejercicio'}
+              <span className="inline-flex items-center space-x-2"><BipedestationIcon type="play" /><span>{starting ? 'Iniciando...' : 'Iniciar ejercicio'}</span></span>
             </button>
           </div>
 
@@ -304,7 +354,7 @@ const Bipedestation = () => {
                 </div>
               )}
               <button onClick={stopExercise} disabled={stopping} className="btn-danger">
-                {stopping ? 'Finalizando...' : '⏹ Finalizar ejercicio'}
+                <span className="inline-flex items-center space-x-2"><BipedestationIcon type="stop" /><span>{stopping ? 'Finalizando...' : 'Finalizar ejercicio'}</span></span>
               </button>
             </div>
           </div>
@@ -319,7 +369,7 @@ const Bipedestation = () => {
 
           {latestUpdate?.status === 'waiting_for_user' || !latestUpdate?.distribution ? (
             <div className="card text-center py-16">
-              <div className="text-7xl mb-4">👣</div>
+              <div className="flex justify-center mb-4 text-primary-600"><BipedestationIcon type="feet" className="w-16 h-16" /></div>
               <p className="text-3xl font-bold text-gray-900">Súbete a la plataforma</p>
               <p className="text-gray-600 mt-2">El ejercicio empezará cuando detectemos suficiente carga.</p>
             </div>
@@ -344,8 +394,8 @@ const Bipedestation = () => {
           ) : (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="card bg-blue-50 text-center"><p className="text-sm text-blue-700">Pie izquierdo</p><p className="text-6xl font-bold text-blue-900">{latestUpdate.distribution.leftPercentage}%</p><p className="text-blue-700 mt-2">{latestUpdate.weights.left} kg</p></div>
-                <div className="card bg-green-50 text-center"><p className="text-sm text-green-700">Pie derecho</p><p className="text-6xl font-bold text-green-900">{latestUpdate.distribution.rightPercentage}%</p><p className="text-green-700 mt-2">{latestUpdate.weights.right} kg</p></div>
+                <div className={`card ${adultVisualData.screenLeft.bgClass} text-center`}><p className={`text-sm ${adultVisualData.screenLeft.labelClass}`}>{adultVisualData.screenLeft.label}</p><p className={`text-6xl font-bold ${adultVisualData.screenLeft.textClass}`}>{adultVisualData.screenLeft.percentage}%</p><p className={`${adultVisualData.screenLeft.labelClass} mt-2`}>{adultVisualData.screenLeft.weight} kg</p></div>
+                <div className={`card ${adultVisualData.screenRight.bgClass} text-center`}><p className={`text-sm ${adultVisualData.screenRight.labelClass}`}>{adultVisualData.screenRight.label}</p><p className={`text-6xl font-bold ${adultVisualData.screenRight.textClass}`}>{adultVisualData.screenRight.percentage}%</p><p className={`${adultVisualData.screenRight.labelClass} mt-2`}>{adultVisualData.screenRight.weight} kg</p></div>
               </div>
 
               <div className="card space-y-4">
@@ -354,15 +404,15 @@ const Bipedestation = () => {
                   <span>Actual: {latestUpdate.distribution.leftPercentage}% izquierdo</span>
                 </div>
                 <div className="relative h-8 rounded-full bg-gray-200 overflow-hidden">
-                  <div className="absolute inset-y-0 left-0 bg-blue-200" style={{ width: `${latestUpdate.distribution.leftPercentage}%` }}></div>
-                  <div className="absolute inset-y-0 right-0 bg-green-200" style={{ width: `${latestUpdate.distribution.rightPercentage}%` }}></div>
-                  <div className="absolute inset-y-0 w-1 bg-gray-900" style={{ left: `calc(${latestUpdate.target.leftPercentage}% - 2px)` }}></div>
-                  <div className="absolute inset-y-0 w-3 rounded-full bg-primary-600" style={{ left: `calc(${latestUpdate.distribution.leftPercentage}% - 6px)` }}></div>
+                  <div className="absolute inset-y-0 left-0 bg-green-200" style={{ width: `${adultVisualData.bar.leftWidth}%` }}></div>
+                  <div className="absolute inset-y-0 right-0 bg-blue-200" style={{ width: `${adultVisualData.bar.rightWidth}%` }}></div>
+                  <div className="absolute inset-y-0 w-1 bg-gray-900" style={{ left: `calc(${adultVisualData.bar.targetMarkerLeft}% - 2px)` }}></div>
+                  <div className="absolute inset-y-0 w-3 rounded-full bg-primary-600" style={{ left: `calc(${adultVisualData.bar.actualMarkerLeft}% - 6px)` }}></div>
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div className="rounded-lg bg-gray-50 p-4"><p className="text-sm text-gray-500">Total</p><p className="text-3xl font-bold text-gray-900">{latestUpdate.weights.total} kg</p></div>
                   <div className="rounded-lg bg-gray-50 p-4"><p className="text-sm text-gray-500">Objetivo</p><p className="text-3xl font-bold text-gray-900">{latestUpdate.target.leftPercentage}/{latestUpdate.target.rightPercentage}</p></div>
-                  <div className="rounded-lg bg-gray-50 p-4"><p className="text-sm text-gray-500">Corrección</p><p className="text-2xl font-bold text-gray-900">{latestUpdate.recommendation === 'balanced' ? '✅ OK' : latestUpdate.recommendation === 'more_left' ? '⬅ Izquierdo' : '➡ Derecho'}</p></div>
+                  <div className="rounded-lg bg-gray-50 p-4"><p className="text-sm text-gray-500">Corrección</p><p className="text-2xl font-bold text-gray-900">{adultVisualData.correctionLabel}</p></div>
                 </div>
               </div>
             </div>
