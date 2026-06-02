@@ -4,8 +4,20 @@
  */
 
 import { PrismaClient } from '@prisma/client'
+import { interpretSitToStandSession } from './sitToStandAiService.js'
 
 const prisma = new PrismaClient()
+
+const attachAiInterpretation = (session) => {
+  if (!session) {
+    return session
+  }
+
+  return {
+    ...session,
+    aiInterpretation: interpretSitToStandSession(session)
+  }
+}
 
 /**
  * Crear una nueva sesión de sit-to-stand
@@ -149,7 +161,7 @@ export async function finalizeSitToStandSession(sitToStandSessionId) {
       }
     })
 
-    return updatedSession
+    return attachAiInterpretation(updatedSession)
   } catch (error) {
     console.error('Error finalizing sit-to-stand session:', error)
     throw error
@@ -179,7 +191,7 @@ export async function getSitToStandSessionById(id) {
       }
     })
 
-    return sitToStandSession
+    return attachAiInterpretation(sitToStandSession)
   } catch (error) {
     console.error('Error getting sit-to-stand session by ID:', error)
     throw error

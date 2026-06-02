@@ -53,6 +53,13 @@ const SitToStandResults = () => {
     return 'Necesita mejora'
   }
 
+  const getAiSeverityColor = (severity) => {
+    if (severity === 'estable') return 'text-green-700'
+    if (severity === 'leve') return 'text-yellow-700'
+    if (severity === 'moderada') return 'text-orange-700'
+    return 'text-red-700'
+  }
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -80,6 +87,7 @@ const SitToStandResults = () => {
   const maxWeightRight = sitToStandSession?.maxWeightRight || 0
   const symmetryPercentage = sitToStandSession?.symmetryPercentage || 0
   const duration = sitToStandSession?.durationSeconds || 0
+  const aiInterpretation = sitToStandSession?.aiInterpretation
 
   return (
     <div className="space-y-6">
@@ -114,6 +122,53 @@ const SitToStandResults = () => {
             </div>
           </div>
         </div>
+
+        {aiInterpretation?.available && (
+          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-indigo-900 mb-2">Interpretación IA experimental</h3>
+                <p className="text-2xl font-bold text-indigo-950">{aiInterpretation.labelText}</p>
+                <p className={`mt-2 font-medium ${getAiSeverityColor(aiInterpretation.severity)}`}>
+                  Severidad: {aiInterpretation.severity}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 lg:min-w-[320px]">
+                <div className="bg-white rounded-lg p-4 text-center border border-indigo-100">
+                  <div className="text-sm text-gray-500">Confianza</div>
+                  <div className="text-2xl font-bold text-indigo-700">{aiInterpretation.confidence}%</div>
+                </div>
+                <div className="bg-white rounded-lg p-4 text-center border border-indigo-100">
+                  <div className="text-sm text-gray-500">Modelo</div>
+                  <div className="text-sm font-semibold text-indigo-700">{aiInterpretation.modelId}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="bg-white rounded-lg p-4 border border-indigo-100">
+                <h4 className="font-semibold text-gray-900 mb-2">Resumen</h4>
+                <p className="text-gray-700">{aiInterpretation.explanation}</p>
+                <p className="text-gray-700 mt-3">{aiInterpretation.recommendation}</p>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border border-indigo-100">
+                <h4 className="font-semibold text-gray-900 mb-2">Variables del modelo</h4>
+                <div className="text-sm text-gray-700 space-y-2">
+                  <div className="flex justify-between"><span>Simetría</span><span>{aiInterpretation.features.symmetryPercentage}%</span></div>
+                  <div className="flex justify-between"><span>Dominancia izquierda</span><span>{aiInterpretation.features.leftDominance}%</span></div>
+                  <div className="flex justify-between"><span>Duración</span><span>{aiInterpretation.features.durationSeconds}s</span></div>
+                  <div className="flex justify-between"><span>Variabilidad reparto</span><span>{aiInterpretation.features.distributionStd}</span></div>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-indigo-700 mt-4">
+              Resultado experimental para justificar el objetivo de investigación en IA. No sustituye la valoración clínica.
+            </p>
+          </div>
+        )}
 
         {/* Métricas principales */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

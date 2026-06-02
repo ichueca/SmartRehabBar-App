@@ -1,0 +1,64 @@
+{
+  "modelId": "sit_to_stand_centroid_v1",
+  "algorithm": "weighted_nearest_centroid",
+  "featureOrder": [
+    "symmetryPercentage",
+    "leftDominance",
+    "durationSeconds",
+    "distributionStd"
+  ],
+  "featureWeights": {
+    "symmetryPercentage": 1.3,
+    "leftDominance": 1.8,
+    "durationSeconds": 0.4,
+    "distributionStd": 0.4
+  },
+  "normalization": {
+    "symmetryPercentage": {
+      "mean": 78.6731,
+      "std": 14.5876
+    },
+    "leftDominance": {
+      "mean": 0,
+      "std": 16.4551
+    },
+    "durationSeconds": {
+      "mean": 4.7179,
+      "std": 1.4711
+    },
+    "distributionStd": {
+      "mean": 7.1538,
+      "std": 3.4272
+    }
+  },
+  "classCentroids": {
+    "balanced": {
+      "symmetryPercentage": 1.033542,
+      "leftDominance": 0,
+      "durationSeconds": -0.488002,
+      "distributionStd": -0.628443
+    },
+    "compensate_left": {
+      "symmetryPercentage": -0.645966,
+      "leftDominance": 1.185043,
+      "durationSeconds": 0.305055,
+      "distributionStd": 0.392799
+    },
+    "compensate_right": {
+      "symmetryPercentage": -0.645966,
+      "leftDominance": -1.185043,
+      "durationSeconds": 0.305055,
+      "distributionStd": 0.392799
+    }
+  },
+  "trainingSummary": {
+    "syntheticSamples": 624,
+    "classes": {
+      "balanced": 240,
+      "compensate_left": 192,
+      "compensate_right": 192
+    },
+    "generatedAt": "2026-06-02T19:10:12.554Z",
+    "note": "Modelo experimental entrenado con muestras sintéticas deterministas para interpretación simple de patrones Sit-to-Stand."
+  }
+}
