@@ -8,6 +8,7 @@ import patientsRouter from './routes/patients.js'
 import sessionsRouter from './routes/sessions.js'
 import measurementsRouter from './routes/measurements.js'
 import hardwareRouter from './routes/hardware.js'
+import hardwareDebugRouter from './routes/hardwareDebug.js'
 import sitToStandRouter from './routes/sitToStand.js'
 import bipedestationRouter from './routes/bipedestation.js'
 import { errorHandler, notFound } from './middleware/errorHandler.js'
@@ -50,6 +51,7 @@ app.use('/api/patients', patientsRouter)
 app.use('/api/sessions', sessionsRouter)
 app.use('/api/measurements', measurementsRouter)
 app.use('/api/hardware', hardwareRouter)
+app.use('/api/hardware-debug', hardwareDebugRouter)
 app.use('/api/sit-to-stand', sitToStandRouter)
 app.use('/api/bipedestation', bipedestationRouter)
 
@@ -64,6 +66,7 @@ app.get('/api', (req, res) => {
       sessions: '/api/sessions',
       measurements: '/api/measurements',
       hardware: '/api/hardware',
+      hardwareDebug: '/api/hardware-debug',
       sitToStand: '/api/sit-to-stand',
       bipedestation: '/api/bipedestation'
     }

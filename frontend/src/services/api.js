@@ -141,3 +141,26 @@ export const bipedestationAPI = {
   }
 }
 
+export const hardwareDebugAPI = {
+  getState: async () => {
+    const response = await fetch(`${API_BASE_URL}/hardware-debug`)
+    return handleResponse(response)
+  },
+
+  setEnabled: async (enabled) => {
+    const response = await fetch(`${API_BASE_URL}/hardware-debug/enabled`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled })
+    })
+    return handleResponse(response)
+  },
+
+  clear: async () => {
+    const response = await fetch(`${API_BASE_URL}/hardware-debug/events`, {
+      method: 'DELETE'
+    })
+    return handleResponse(response)
+  }
+}
+

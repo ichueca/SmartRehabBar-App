@@ -143,6 +143,24 @@ class SocketService {
       exerciseId: status.exercise?.id
     })
   }
+
+  emitHardwareDebugEvent(event) {
+    if (!this.io) {
+      console.error('Socket.IO no está inicializado')
+      return
+    }
+
+    this.io.emit('hardware-debug:event', event)
+  }
+
+  emitHardwareDebugState(state) {
+    if (!this.io) {
+      console.error('Socket.IO no está inicializado')
+      return
+    }
+
+    this.io.emit('hardware-debug:state', state)
+  }
 }
 
 export default new SocketService()

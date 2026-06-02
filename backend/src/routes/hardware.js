@@ -4,6 +4,7 @@ import measurementService from '../services/measurementService.js'
 import socketService from '../services/socketService.js'
 import * as sitToStandService from '../services/sitToStandService.js'
 import bipedestationService from '../services/bipedestationService.js'
+import hardwareDebugService from '../services/hardwareDebugService.js'
 import { spawn } from 'child_process'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -37,9 +38,21 @@ router.get('/:foot', async (req, res) => {
   try {
     const { foot } = req.params
     const { peso, bat } = req.query
+    const parsedWeight = peso && !isNaN(parseFloat(peso)) ? parseFloat(peso) : null
+    const parsedBattery = bat && !isNaN(parseFloat(bat)) ? parseFloat(bat) : null
 
     // Validar parámetros
     if (!foot || !['left', 'right'].includes(foot)) {
+      recordHardwareDebug(req, {
+        foot,
+        weight: parsedWeight,
+        batteryLevel: parsedBattery,
+        mode: 'invalid',
+        outcome: 'invalid_foot',
+        httpStatus: 400,
+        details: { message: 'foot must be "left" or "right"' }
+      })
+
       return res.status(400).json({
         error: 'Invalid foot parameter',
         message: 'foot must be "left" or "right"'
@@ -47,6 +60,16 @@ router.get('/:foot', async (req, res) => {
     }
 
     if (!peso || isNaN(parseFloat(peso))) {
+      recordHardwareDebug(req, {
+        foot,
+        weight: parsedWeight,
+        batteryLevel: parsedBattery,
+        mode: 'invalid',
+        outcome: 'invalid_weight',
+        httpStatus: 400,
+        details: { message: 'peso must be a valid number' }
+      })
+
       return res.status(400).json({
         error: 'Invalid peso parameter',
         message: 'peso must be a valid number'
@@ -58,6 +81,16 @@ router.get('/:foot', async (req, res) => {
 
     // Validar nivel de batería si se proporciona
     if (batteryLevel !== null && (isNaN(batteryLevel) || batteryLevel < 0 || batteryLevel > 100)) {
+      recordHardwareDebug(req, {
+        foot,
+        weight,
+        batteryLevel,
+        mode: 'invalid',
+        outcome: 'invalid_battery',
+        httpStatus: 400,
+        details: { message: 'bat must be a number between 0 and 100' }
+      })
+
       return res.status(400).json({
         error: 'Invalid bat parameter',
         message: 'bat must be a number between 0 and 100'
@@ -70,16 +103,26 @@ router.get('/:foot', async (req, res) => {
     const activeSitToStand = await sitToStandService.getActiveSitToStandSession()
     if (activeSitToStand) {
       // Procesar medición para sit-to-stand
-      return await processSitToStandMeasurement(foot, weight, batteryLevel, activeSitToStand, res)
+      return await processSitToStandMeasurement(req, foot, weight, batteryLevel, activeSitToStand, res)
     }
 
     if (bipedestationService.isActive()) {
-      return processBipedestationMeasurement(foot, weight, batteryLevel, res)
+      return processBipedestationMeasurement(req, foot, weight, batteryLevel, res)
     }
 
     // Verificar si hay sesión activa
     const activeSession = await sessionService.getAnyActiveSession()
     if (!activeSession) {
+      recordHardwareDebug(req, {
+        foot,
+        weight,
+        batteryLevel,
+        mode: 'none',
+        outcome: 'no_active_session',
+        httpStatus: 200,
+        details: { message: 'No hay sesión activa para registrar mediciones' }
+      })
+
       return res.json({
         status: 'no_active_session',
         message: 'No hay sesión activa para registrar mediciones'
@@ -92,6 +135,20 @@ router.get('/:foot', async (req, res) => {
     
     // Filtro temporal: mínimo 50ms entre mediciones del mismo pie
     if (recent && (now - recent.timestamp) < 50) {
+      recordHardwareDebug(req, {
+        foot,
+        weight,
+        batteryLevel,
+        mode: 'gait',
+        outcome: 'filtered_time',
+        httpStatus: 200,
+        details: {
+          sessionId: activeSession.id,
+          sincePreviousMs: now - recent.timestamp,
+          message: 'Medición filtrada por frecuencia (< 50ms)'
+        }
+      })
+
       return res.json({
         status: 'filtered_time',
         message: 'Medición filtrada por frecuencia (< 50ms)',
@@ -108,6 +165,20 @@ router.get('/:foot', async (req, res) => {
         sessionId: activeSession.id
       })
       
+      recordHardwareDebug(req, {
+        foot,
+        weight,
+        batteryLevel,
+        mode: 'gait',
+        outcome: 'filtered_weight',
+        httpStatus: 200,
+        details: {
+          sessionId: activeSession.id,
+          previousWeight: recent.weight,
+          message: 'Medición filtrada por cambio mínimo (< 1kg)'
+        }
+      })
+
       return res.json({
         status: 'filtered_weight',
         message: 'Medición filtrada por cambio mínimo (< 1kg)',
@@ -144,6 +215,7 @@ router.get('/:foot', async (req, res) => {
     // Intentar emparejar con medición reciente del pie opuesto
     const oppositeFoot = foot === 'left' ? 'right' : 'left'
     const pairTimeWindow = 2000 // 2 segundos para encontrar par
+    let pairingInfo = { paired: false }
 
     try {
       const recentMeasurements = await measurementService.getRecentUnpaired(
@@ -158,6 +230,12 @@ router.get('/:foot', async (req, res) => {
 
         // Crear emparejamiento
         const pairedData = await measurementService.createPair(measurement, pairMeasurement)
+        pairingInfo = {
+          paired: true,
+          pairMeasurementId: pairMeasurement.id,
+          pairedFoot: oppositeFoot,
+          pairedWeight: pairMeasurement.weight
+        }
 
         console.log(`🔗 Pisada emparejada: ${foot}=${measurement.weight}kg + ${oppositeFoot}=${pairMeasurement.weight}kg`)
 
@@ -166,8 +244,27 @@ router.get('/:foot', async (req, res) => {
       }
     } catch (pairError) {
       console.log('⚠️ Error al intentar emparejar:', pairError.message)
+      pairingInfo = {
+        paired: false,
+        pairError: pairError.message
+      }
       // No es crítico, la medición individual ya se guardó
     }
+
+    recordHardwareDebug(req, {
+      foot,
+      weight,
+      batteryLevel,
+      mode: 'gait',
+      outcome: 'stored',
+      httpStatus: 200,
+      details: {
+        sessionId: activeSession.id,
+        measurementId: measurement.id,
+        patientName: activeSession.patient.name,
+        ...pairingInfo
+      }
+    })
     
     res.json({
       status: 'ok',
@@ -178,6 +275,17 @@ router.get('/:foot', async (req, res) => {
     })
     
   } catch (error) {
+    recordHardwareDebug(req, {
+      foot: req.params.foot ?? null,
+      weight: req.query.peso ? parseFloat(req.query.peso) : null,
+      batteryLevel: req.query.bat ? parseFloat(req.query.bat) : null,
+      mode: 'error',
+      outcome: 'exception',
+      httpStatus: 500,
+      details: { message: 'Error al procesar medición del hardware' },
+      error
+    })
+
     console.error('Error processing hardware measurement:', error)
     res.status(500).json({
       error: 'Internal server error',
@@ -311,7 +419,7 @@ router.get('/simulator/status', (req, res) => {
 /**
  * Procesar medición para sesión de sit-to-stand
  */
-async function processSitToStandMeasurement(foot, weight, batteryLevel, activeSitToStand, res) {
+async function processSitToStandMeasurement(req, foot, weight, batteryLevel, activeSitToStand, res) {
   try {
     const now = Date.now()
     const startTime = new Date(activeSitToStand.startTime).getTime()
@@ -351,6 +459,22 @@ async function processSitToStandMeasurement(foot, weight, batteryLevel, activeSi
       // Limpiar cache
       recentMeasurements.delete(cacheKey)
 
+      recordHardwareDebug(req, {
+        foot,
+        weight,
+        batteryLevel,
+        mode: 'sit_to_stand',
+        outcome: 'stored',
+        httpStatus: 200,
+        details: {
+          sitToStandId: activeSitToStand.id,
+          elapsedSeconds,
+          measurementId: measurement.id,
+          hasLeftWeight,
+          hasRightWeight
+        }
+      })
+
       return res.json({
         status: 'sit_to_stand_measurement',
         message: 'Medición de levantarse procesada',
@@ -363,6 +487,21 @@ async function processSitToStandMeasurement(foot, weight, batteryLevel, activeSi
       pendingMeasurement.lastUpdate = now
       recentMeasurements.set(cacheKey, pendingMeasurement)
 
+      recordHardwareDebug(req, {
+        foot,
+        weight,
+        batteryLevel,
+        mode: 'sit_to_stand',
+        outcome: 'partial',
+        httpStatus: 200,
+        details: {
+          sitToStandId: activeSitToStand.id,
+          elapsedSeconds,
+          hasLeftWeight,
+          hasRightWeight
+        }
+      })
+
       return res.json({
         status: 'sit_to_stand_partial',
         message: 'Medición parcial de levantarse guardada',
@@ -374,6 +513,20 @@ async function processSitToStandMeasurement(foot, weight, batteryLevel, activeSi
     }
 
   } catch (error) {
+    recordHardwareDebug(req, {
+      foot,
+      weight,
+      batteryLevel,
+      mode: 'sit_to_stand',
+      outcome: 'exception',
+      httpStatus: 500,
+      details: {
+        sitToStandId: activeSitToStand?.id ?? null,
+        message: 'Error procesando medición de levantarse'
+      },
+      error
+    })
+
     console.error('Error processing sit-to-stand measurement:', error)
     return res.status(500).json({
       error: 'internal_error',
@@ -382,11 +535,21 @@ async function processSitToStandMeasurement(foot, weight, batteryLevel, activeSi
   }
 }
 
-function processBipedestationMeasurement(foot, weight, batteryLevel, res) {
+function processBipedestationMeasurement(req, foot, weight, batteryLevel, res) {
   try {
     const update = bipedestationService.processMeasurement(foot, weight, batteryLevel)
 
     if (!update) {
+      recordHardwareDebug(req, {
+        foot,
+        weight,
+        batteryLevel,
+        mode: 'bipedestation',
+        outcome: 'no_active_bipedestation',
+        httpStatus: 400,
+        details: { message: 'No hay un ejercicio de bipedestación activo' }
+      })
+
       return res.status(400).json({
         error: 'no_active_bipedestation',
         message: 'No hay un ejercicio de bipedestación activo'
@@ -395,17 +558,73 @@ function processBipedestationMeasurement(foot, weight, batteryLevel, res) {
 
     socketService.emitBipedestationUpdate(update)
 
+    recordHardwareDebug(req, {
+      foot,
+      weight,
+      batteryLevel,
+      mode: 'bipedestation',
+      outcome: 'stored',
+      httpStatus: 200,
+      details: {
+        exerciseId: update.exerciseId,
+        status: update.status,
+        recommendation: update.recommendation,
+        message: update.message
+      }
+    })
+
     return res.json({
       status: 'bipedestation_measurement',
       message: 'Medición de bipedestación procesada',
       update
     })
   } catch (error) {
+    recordHardwareDebug(req, {
+      foot,
+      weight,
+      batteryLevel,
+      mode: 'bipedestation',
+      outcome: 'exception',
+      httpStatus: 500,
+      details: { message: 'Error procesando medición de bipedestación' },
+      error
+    })
+
     console.error('Error processing bipedestation measurement:', error)
     return res.status(500).json({
       error: 'internal_error',
       message: 'Error procesando medición de bipedestación'
     })
+  }
+}
+
+function recordHardwareDebug(req, payload) {
+  const entry = hardwareDebugService.addEvent({
+    source: 'hardware',
+    method: req.method,
+    path: req.originalUrl,
+    foot: payload.foot,
+    raw: {
+      foot: req.params.foot ?? null,
+      peso: req.query.peso ?? null,
+      bat: req.query.bat ?? null
+    },
+    parsed: {
+      weight: payload.weight,
+      batteryLevel: payload.batteryLevel
+    },
+    mode: payload.mode,
+    outcome: payload.outcome,
+    httpStatus: payload.httpStatus,
+    details: payload.details ?? null,
+    error: payload.error ? {
+      message: payload.error.message,
+      code: payload.error.code ?? null
+    } : null
+  })
+
+  if (entry) {
+    socketService.emitHardwareDebugEvent(entry)
   }
 }
 
