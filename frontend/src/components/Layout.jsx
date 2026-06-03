@@ -19,6 +19,10 @@ const Layout = () => {
   const { connected, activeSessions } = useSocket()
   
   const isActive = (path) => {
+    if (path === '/') {
+      return location.pathname === '/' || location.pathname === '/dashboard'
+    }
+
     return location.pathname === path || location.pathname.startsWith(path + '/')
   }
 

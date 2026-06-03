@@ -73,7 +73,7 @@ const SitToStandResults = () => {
       <div className="text-center py-12">
         <div className="text-red-600 text-xl mb-4">❌ {error}</div>
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/')}
           className="btn-primary"
         >
           Volver al Dashboard
@@ -108,7 +108,7 @@ const SitToStandResults = () => {
             
             <div className="text-right">
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/')}
                 className="btn-primary mr-2"
               >
                 Dashboard
