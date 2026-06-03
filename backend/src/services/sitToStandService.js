@@ -116,7 +116,33 @@ export async function finalizeSitToStandSession(sitToStandSessionId) {
     })
 
     if (measurements.length === 0) {
-      throw new Error('No measurements found for sit-to-stand session')
+      const emptySession = await prisma.sitToStandSession.update({
+        where: {
+          id: sitToStandSessionId
+        },
+        data: {
+          endTime: new Date(),
+          status: 'completed',
+          durationSeconds: 0,
+          maxWeightLeft: 0,
+          maxWeightRight: 0,
+          symmetryPercentage: 0
+        },
+        include: {
+          session: {
+            include: {
+              patient: true
+            }
+          },
+          measurements: {
+            orderBy: {
+              timestamp: 'asc'
+            }
+          }
+        }
+      })
+
+      return attachAiInterpretation(emptySession)
     }
 
     // Calcular métricas
